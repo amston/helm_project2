@@ -1,0 +1,11 @@
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 2345
+  targetport: 3000
+  name: hashgenerator-a-svc

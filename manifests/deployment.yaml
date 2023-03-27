@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hashgenerator-a-dep
+  namespace: namespace-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hashgenerator-a
+  template:
+    metadata:
+      labels:
+        app: hashgenerator-a
+    spec:
+      containers:
+        - name: hashgenerator-a
+          image: amusdocker/exercise108_1r:latest

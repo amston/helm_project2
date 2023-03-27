@@ -1,0 +1,12 @@
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-external
+  namespace: namespace-c
+spec:
+  ingress:
+  - action: Deny
+    protocol: TCP
+    destination:
+      ports:
+        - 3000

@@ -86,6 +86,13 @@ spec:
             periodSeconds: 5
             failureThreshold: 60
             initialDelaySeconds: 10
+          livenessProbe:
+            httpGet:
+              port: {{ .Values.bitbucket.ports.http }}
+              path: {{ .Values.bitbucket.service.contextPath }}/status
+            periodSeconds: 5
+            failureThreshold: 60
+            initialDelaySeconds: 10
           {{- with .Values.bitbucket.containerSecurityContext}}
           securityContext:
             {{- toYaml . | nindent 12}}

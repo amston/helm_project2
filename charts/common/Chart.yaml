@@ -1,24 +1,17 @@
-annotations:
-  category: Infrastructure
-  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 2.2.4
-description: A Library Helm Chart for grouping common logic between bitnami charts.
+appVersion: 1.0.0
+description: A Library Helm Chart for grouping common logic between Atlassian charts.
   This chart is not deployable by itself.
-home: https://github.com/bitnami/charts/tree/main/bitnami/common
-icon: https://bitnami.com/downloads/logos/bitnami-mark.png
+home: https://atlassian.github.io/data-center-helm-charts/
+icon: https://atlassian.github.io/data-center-helm-charts/icons/atlassian.svg
 keywords:
 - common
 - helper
 - template
 - function
-- bitnami
-maintainers:
-- name: Bitnami
-  url: https://github.com/bitnami/charts
+- Atlassian
 name: common
 sources:
-- https://github.com/bitnami/charts
-- https://www.bitnami.com/
+- https://github.com/atlassian/data-center-helm-charts
 type: library
-version: 2.2.4
+version: 1.0.0

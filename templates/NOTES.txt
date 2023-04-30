@@ -1,95 +1,82 @@
-CHART NAME: {{ .Chart.Name }}
-CHART VERSION: {{ .Chart.Version }}
-APP VERSION: {{ .Chart.AppVersion }}
+Thank you for installing {{ title .Chart.Name }}.
 
-** Please be patient while the chart is being deployed **
+Your release is named {{ .Release.Name }}, and resides in namespace {{ .Release.Namespace }}.
 
-{{- if .Values.diagnosticMode.enabled }}
-The chart has been deployed in diagnostic mode. All probes have been disabled and the command has been overwritten with:
+Please run sanity tests against the release to verify it's healthy:
 
-  command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 4 }}
-  args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 4 }}
+  $ helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
 
-Get the list of pods by executing:
+If the Kubernetes resources in the release are still starting up, then the tests may fail, so it
+is advisable to wait for the tests to pass before continuing.
 
-  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+To see the custom values you used for this release:
 
-Access the pod you want to debug by executing
+  $ helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
 
-  kubectl exec --namespace {{ .Release.Namespace }} -ti <NAME OF THE POD> -- bash
-
-In order to replicate the container startup scripts execute this command:
-
-    /opt/bitnami/scripts/wordpress/entrypoint.sh /opt/bitnami/scripts/apache/run.sh
-
+{{ if .Values.ingress.create -}}
+{{ title .Chart.Name }} service URL: {{ ternary "https" "http" .Values.ingress.https -}}://{{ .Values.ingress.host }}{{ include "bitbucket.ingressPath" . }}
 {{- else }}
+Get the {{ title .Chart.Name }} URL by running these commands in the same shell:
+{{- if contains "NodePort" .Values.bitbucket.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ .Release.Name }}-{{ .Chart.Name }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.bitbucket.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer hostname to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ .Release.Name }}-{{ .Chart.Name }}'
 
-Your WordPress site can be accessed through the following DNS name from within your cluster:
+  export SERVICE_HOSTNAME=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ .Release.Name }}-{{ .Chart.Name }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+  echo http://$SERVICE_HOSTNAME:{{ .Values.bitbucket.service.port }}
+{{- else if contains "ClusterIP" .Values.bitbucket.service.type }}
+  Step 1: Get the pod name
+    $ export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  Step 2 (Optional): Check if the pod name has been exported successfully and the pod status
+    $ echo POD_NAME: $POD_NAME && echo POD_STATUS: $(kubectl get pod $POD_NAME -o jsonpath='{.status.phase}')
+  Step 3: Wait for pods up and running, then forward pod port to localhost
+    $ kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.bitbucket.ports.http }}
+  Step 4: Access {{ title .Chart.Name }} on localhost:
+    http://localhost:{{ .Values.bitbucket.ports.http }}
+{{- end }}
+{{- end }}
+{{- if not ( or .Values.volumes.localHome.persistentVolumeClaim.create .Values.volumes.localHome.customVolume ) }}
 
-    {{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} (port {{ .Values.service.ports.http }})
+#################################################################################
+#####       WARNING: Persistent volume is not used for Local Home!!!        #####
+#####             Data will be lost when the pod is terminated.             #####
+#################################################################################
+{{- end }}
+{{/* Mirrors don't need a shared home - only show warning if clustering is enabled and no shared home volume is created */}}
+{{/* the default can be removed in v2.0.0 */}}
+{{- if and ( not ( or .Values.volumes.sharedHome.persistentVolumeClaim.create .Values.volumes.sharedHome.customVolume)) ( and .Values.bitbucket.clustering.enabled ( eq (default "" .Values.bitbucket.applicationMode) "default")) }}
 
-To access your WordPress site from outside the cluster follow the steps below:
+#################################################################################
+#####  WARNING: Clustering is enabled but Shared Home is not configured!!!  #####
+#####            Nodes will not be able to form a cluster.                  #####
+#################################################################################
+{{- end }}
+{{- if ( or .Values.bitbucket.securityContext.enabled .Values.bitbucket.securityContext.gid ) }}
 
-{{- if .Values.ingress.enabled }}
+#################################################################################
+######     DEPRECATION WARNING: bitbucket.securityContext deprecation       #####
+######   Update your values to the new bitbucket.securityContext format     #####
+#################################################################################
+{{- end}}
 
-1. Get the WordPress URL and associate WordPress hostname to your cluster external IP:
+{{- if and (.Values.bitbucket.mesh.enabled) (not .Values.bitbucket.mesh.nodeAutoRegistration)}}
 
-   export CLUSTER_IP=$(minikube ip) # On Minikube. Use: `kubectl cluster-info` on others K8s clusters
-   echo "WordPress URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}/"
-   echo "$CLUSTER_IP  {{ .Values.ingress.hostname }}" | sudo tee -a /etc/hosts
+Bitbucket Mesh deployed. You can register Mesh nodes at {{ if .Values.ingress.create }}{{ ternary "https" "http" .Values.ingress.https -}}://{{ .Values.ingress.host }}{{ include "bitbucket.ingressPath" . }}{{ else }}${BITBUCKET_URL}{{ end }}/admin/git/mesh using the following URLs:
 
-{{- else }}
-{{- $port := .Values.service.ports.http | toString }}
-
-1. Get the WordPress URL by running these commands:
-
-{{- if contains "NodePort" .Values.service.type }}
-
-   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "common.names.fullname" . }})
-   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-   echo "WordPress URL: http://$NODE_IP:$NODE_PORT/"
-   echo "WordPress Admin URL: http://$NODE_IP:$NODE_PORT/admin"
-
-{{- else if contains "LoadBalancer" .Values.service.type }}
-
-  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
-
-   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
-   echo "WordPress URL: http://$SERVICE_IP{{- if ne $port "80" }}:{{ .Values.service.ports.http }}{{ end }}/"
-   echo "WordPress Admin URL: http://$SERVICE_IP{{- if ne $port "80" }}:{{ .Values.service.ports.http }}{{ end }}/admin"
-
-{{- else if contains "ClusterIP"  .Values.service.type }}
-
-   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ .Values.service.ports.http }}:{{ .Values.service.ports.http }} &
-   echo "WordPress URL: http://127.0.0.1{{- if ne $port "80" }}:{{ .Values.service.ports.http }}{{ end }}//"
-   echo "WordPress Admin URL: http://127.0.0.1{{- if ne $port "80" }}:{{ .Values.service.ports.http }}{{ end }}//admin"
-
+{{- range $index := until (.Values.bitbucket.mesh.replicaCount | int) }}
+{{- with $ }}
+  * http://{{ include "common.names.fullname" . }}-mesh-{{ $index }}:{{ .Values.bitbucket.mesh.service.port }}
 {{- end }}
 {{- end }}
 
-2. Open a browser and access WordPress using the obtained URL.
+{{ if eq .Values.bitbucket.mesh.service.type "LoadBalancer" }}
+You may use LoadBalancer URLs to register Mesh nodes with Bitbucket server. Get LoadBalancer hostnames:
 
-3. Login with the following credentials below to see your blog:
-
-  echo Username: {{ .Values.wordpressUsername }}
-  echo Password: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} -o jsonpath="{.data.wordpress-password}" | base64 -d)
-
-{{- if .Values.metrics.enabled }}
-
-You can access Apache Prometheus metrics following the steps below:
-
-1. Get the Apache Prometheus metrics URL by running:
-
-    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ printf "%s-metrics" (include "common.names.fullname" .) }} {{ .Values.metrics.service.ports.metrics }}:{{ .Values.metrics.service.ports.metrics }} &
-    echo "Apache Prometheus metrics URL: http://127.0.0.1:{{ .Values.metrics.service.ports.metrics }}/metrics"
-
-2. Open a browser and access Apache Prometheus metrics using the obtained URL.
-
+  $ for service in {0..2}; do kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }}-mesh-$service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}; done
 {{- end }}
 {{- end }}
 
-{{- include "wordpress.validateValues" . }}
-{{- include "common.warnings.rollingTag" .Values.image }}
-{{- include "common.warnings.rollingTag" .Values.metrics.image }}
-{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
+For further documentation, see https://atlassian.github.io/data-center-helm-charts/

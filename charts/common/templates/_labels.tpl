@@ -1,18 +1,23 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
-Kubernetes standard labels
+Common labels
 */}}
-{{- define "common.labels.standard" -}}
-app.kubernetes.io/name: {{ include "common.names.name" . }}
+{{- define "common.labels.commonLabels" -}}
 helm.sh/chart: {{ include "common.names.chart" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "common.labels.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end -}}
+{{ with .Values.additionalLabels }}
+{{- toYaml . }}
+{{- end }}
+{{- end }}
 
 {{/*
-Labels to use on deploy.spec.selector.matchLabels and svc.spec.selector
+Selector labels
 */}}
-{{- define "common.labels.matchLabels" -}}
+{{- define "common.labels.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "common.names.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end -}}
+{{- end }}

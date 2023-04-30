@@ -1,40 +1,28 @@
 annotations:
-  category: CMS
-  licenses: Apache-2.0
+  artifacthub.io/changes: |-
+    - "Add priorityClassName to pod spec (#557)"
+    - "Add hostAliases for all DC products (#556)"
+    - "Update appVersions for DC apps (#558)"
+  artifacthub.io/containsSecurityUpdates: "false"
 apiVersion: v2
-appVersion: 6.2.0
+appVersion: 8.9.0
 dependencies:
-- condition: memcached.enabled
-  name: memcached
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 6.x.x
-- condition: mariadb.enabled
-  name: mariadb
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 12.x.x
 - name: common
-  repository: oci://registry-1.docker.io/bitnamicharts
-  tags:
-  - bitnami-common
-  version: 2.x.x
-description: WordPress is the world's most popular blogging and content management
-  platform. Powerful yet simple, everyone from students to global corporations use
-  it to build beautiful, functional websites.
-home: https://github.com/bitnami/charts/tree/main/bitnami/wordpress
-icon: https://bitnami.com/assets/stacks/wordpress/img/wordpress-stack-220x234.png
+  repository: https://atlassian.github.io/data-center-helm-charts
+  version: 1.0.0
+description: A chart for installing Bitbucket Data Center on Kubernetes
+home: https://atlassian.github.io/data-center-helm-charts/
+icon: https://atlassian.github.io/data-center-helm-charts/icons/bitbucket.svg
 keywords:
-- application
-- blog
-- cms
-- http
-- php
-- web
-- wordpress
-maintainers:
-- name: Bitnami
-  url: https://github.com/bitnami/charts
-name: wordpress
+- Bitbucket
+- Bitbucket Server
+- Bitbucket Data Center
+- Bitbucket DC
+- Atlassian
+kubeVersion: '>=1.21.x-0'
+name: bitbucket
 sources:
-- https://github.com/bitnami/containers/tree/main/bitnami/wordpress
-- https://wordpress.org/
-version: 16.0.1
+- https://github.com/atlassian/data-center-helm-charts
+- https://bitbucket.org/atlassian-docker/docker-atlassian-bitbucket-server/
+type: application
+version: 1.12.0

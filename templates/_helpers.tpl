@@ -1,30 +1,56 @@
-{{/* vim: set filetype=mustache: */}}
-
 {{/*
-Return the proper RabbitMQ image name
+Return the proper Keycloak image name
 */}}
-{{- define "rabbitmq.image" -}}
+{{- define "keycloak.image" -}}
 {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
 {{- end -}}
 
 {{/*
-Return the proper image name (for the init container volume-permissions image)
+Return the proper keycloak-config-cli image name
 */}}
-{{- define "rabbitmq.volumePermissions.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.volumePermissions.image "global" .Values.global) }}
+{{- define "keycloak.keycloakConfigCli.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.keycloakConfigCli.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
+Return the keycloak-config-cli configuration configmap.
+*/}}
+{{- define "keycloak.keycloakConfigCli.configmapName" -}}
+{{- if .Values.keycloakConfigCli.existingConfigmap -}}
+    {{- printf "%s" (tpl .Values.keycloakConfigCli.existingConfigmap $) -}}
+{{- else -}}
+    {{- printf "%s-keycloak-config-cli-configmap" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return true if a configmap object should be created for keycloak-config-cli
+*/}}
+{{- define "keycloak.keycloakConfigCli.createConfigmap" -}}
+{{- if and .Values.keycloakConfigCli.enabled .Values.keycloakConfigCli.configuration (not .Values.keycloakConfigCli.existingConfigmap) -}}
+    {{- true -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
 Return the proper Docker Image Registry Secret Names
 */}}
-{{- define "rabbitmq.imagePullSecrets" -}}
-{{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.volumePermissions.image) "global" .Values.global) }}
+{{- define "keycloak.imagePullSecrets" -}}
+{{- include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.keycloakConfigCli.image) "global" .Values.global) -}}
 {{- end -}}
 
 {{/*
- Create the name of the service account to use
- */}}
-{{- define "rabbitmq.serviceAccountName" -}}
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "keycloak.postgresql.fullname" -}}
+{{- include "common.names.dependency.fullname" (dict "chartName" "postgresql" "chartValues" .Values.postgresql "context" $) -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "keycloak.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
     {{ default (include "common.names.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
@@ -33,106 +59,221 @@ Return the proper Docker Image Registry Secret Names
 {{- end -}}
 
 {{/*
-Get the password secret.
+Return the path Keycloak is hosted on. This looks at httpRelativePath and returns it with a trailing slash. For example:
+    / -> / (the default httpRelativePath)
+    /auth -> /auth/ (trailing slash added)
+    /custom/ -> /custom/ (unchanged)
 */}}
-{{- define "rabbitmq.secretPasswordName" -}}
-    {{- if .Values.auth.existingPasswordSecret -}}
-        {{- printf "%s" (tpl .Values.auth.existingPasswordSecret $) -}}
-    {{- else -}}
-        {{- printf "%s" (include "common.names.fullname" .) -}}
-    {{- end -}}
+{{- define "keycloak.httpPath" -}}
+{{ ternary .Values.httpRelativePath (printf "%s%s" .Values.httpRelativePath "/") (hasSuffix "/" .Values.httpRelativePath) }}
 {{- end -}}
 
 {{/*
-Get the erlang secret.
+Return the Keycloak configuration configmap
 */}}
-{{- define "rabbitmq.secretErlangName" -}}
-    {{- if .Values.auth.existingErlangSecret -}}
-        {{- printf "%s" (tpl .Values.auth.existingErlangSecret $) -}}
-    {{- else -}}
-        {{- printf "%s" (include "common.names.fullname" .) -}}
-    {{- end -}}
+{{- define "keycloak.configmapName" -}}
+{{- if .Values.existingConfigmap -}}
+    {{- printf "%s" (tpl .Values.existingConfigmap $) -}}
+{{- else -}}
+    {{- printf "%s-configuration" (include "common.names.fullname" .) -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
-Get the TLS secret.
+Return true if a configmap object should be created
 */}}
-{{- define "rabbitmq.tlsSecretName" -}}
-    {{- if .Values.auth.tls.existingSecret -}}
-        {{- printf "%s" (tpl .Values.auth.tls.existingSecret $) -}}
-    {{- else -}}
-        {{- printf "%s-certs" (include "common.names.fullname" .) -}}
-    {{- end -}}
-{{- end -}}
-
-{{/*
-Return true if a TLS credentials secret object should be created
-*/}}
-{{- define "rabbitmq.createTlsSecret" -}}
-{{- if and .Values.auth.tls.enabled (not .Values.auth.tls.existingSecret) }}
+{{- define "keycloak.createConfigmap" -}}
+{{- if and .Values.configuration (not .Values.existingConfigmap) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return the proper RabbitMQ plugin list
+Return the Database hostname
 */}}
-{{- define "rabbitmq.plugins" -}}
-{{- $plugins := .Values.plugins -}}
-{{- if .Values.extraPlugins -}}
-{{- $plugins = printf "%s %s" $plugins .Values.extraPlugins -}}
+{{- define "keycloak.databaseHost" -}}
+{{- if eq .Values.postgresql.architecture "replication" }}
+{{- ternary (include "keycloak.postgresql.fullname" .) (tpl .Values.externalDatabase.host $) .Values.postgresql.enabled -}}-primary
+{{- else -}}
+{{- ternary (include "keycloak.postgresql.fullname" .) (tpl .Values.externalDatabase.host $) .Values.postgresql.enabled -}}
 {{- end -}}
-{{- if .Values.metrics.enabled -}}
-{{- $plugins = printf "%s %s" $plugins .Values.metrics.plugins -}}
-{{- end -}}
-{{- printf "%s" $plugins | replace " " ", " -}}
 {{- end -}}
 
 {{/*
-Return the number of bytes given a value
-following a base 2 o base 10 number system.
-Usage:
-{{ include "rabbitmq.toBytes" .Values.path.to.the.Value }}
+Return the Database port
 */}}
-{{- define "rabbitmq.toBytes" -}}
-{{- $value := int (regexReplaceAll "([0-9]+).*" . "${1}") }}
-{{- $unit := regexReplaceAll "[0-9]+(.*)" . "${1}" }}
-{{- if eq $unit "Ki" }}
-    {{- mul $value 1024 }}
-{{- else if eq $unit "Mi" }}
-    {{- mul $value 1024 1024 }}
-{{- else if eq $unit "Gi" }}
-    {{- mul $value 1024 1024 1024 }}
-{{- else if eq $unit "Ti" }}
-    {{- mul $value 1024 1024 1024 1024 }}
-{{- else if eq $unit "Pi" }}
-    {{- mul $value 1024 1024 1024 1024 1024 }}
-{{- else if eq $unit "Ei" }}
-    {{- mul $value 1024 1024 1024 1024 1024 1024 }}
-{{- else if eq $unit "K" }}
-    {{- mul $value 1000 }}
-{{- else if eq $unit "M" }}
-    {{- mul $value 1000 1000 }}
-{{- else if eq $unit "G" }}
-    {{- mul $value 1000 1000 1000 }}
-{{- else if eq $unit "T" }}
-    {{- mul $value 1000 1000 1000 1000 }}
-{{- else if eq $unit "P" }}
-    {{- mul $value 1000 1000 1000 1000 1000 }}
-{{- else if eq $unit "E" }}
-    {{- mul $value 1000 1000 1000 1000 1000 1000 }}
-{{- end }}
+{{- define "keycloak.databasePort" -}}
+{{- ternary "5432" .Values.externalDatabase.port .Values.postgresql.enabled | quote -}}
 {{- end -}}
 
 {{/*
-Compile all warnings into a single message, and call fail.
+Return the Database database name
 */}}
-{{- define "rabbitmq.validateValues" -}}
+{{- define "keycloak.databaseName" -}}
+{{- if .Values.postgresql.enabled }}
+    {{- if .Values.global.postgresql }}
+        {{- if .Values.global.postgresql.auth }}
+            {{- coalesce .Values.global.postgresql.auth.database .Values.postgresql.auth.database -}}
+        {{- else -}}
+            {{- .Values.postgresql.auth.database -}}
+        {{- end -}}
+    {{- else -}}
+        {{- .Values.postgresql.auth.database -}}
+    {{- end -}}
+{{- else -}}
+    {{- .Values.externalDatabase.database -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the Database user
+*/}}
+{{- define "keycloak.databaseUser" -}}
+{{- if .Values.postgresql.enabled -}}
+    {{- if .Values.global.postgresql -}}
+        {{- if .Values.global.postgresql.auth -}}
+            {{- coalesce .Values.global.postgresql.auth.username .Values.postgresql.auth.username -}}
+        {{- else -}}
+            {{- .Values.postgresql.auth.username -}}
+        {{- end -}}
+    {{- else -}}
+        {{- .Values.postgresql.auth.username -}}
+    {{- end -}}
+{{- else -}}
+    {{- .Values.externalDatabase.user -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the Database encrypted password
+*/}}
+{{- define "keycloak.databaseSecretName" -}}
+{{- if .Values.postgresql.enabled -}}
+    {{- if .Values.global.postgresql -}}
+        {{- if .Values.global.postgresql.auth -}}
+            {{- if .Values.global.postgresql.auth.existingSecret -}}
+                {{- tpl .Values.global.postgresql.auth.existingSecret $ -}}
+            {{- else -}}
+                {{- default (include "keycloak.postgresql.fullname" .) (tpl .Values.postgresql.auth.existingSecret $) -}}
+            {{- end -}}
+        {{- else -}}
+            {{- default (include "keycloak.postgresql.fullname" .) (tpl .Values.postgresql.auth.existingSecret $) -}}
+        {{- end -}}
+    {{- else -}}
+        {{- default (include "keycloak.postgresql.fullname" .) (tpl .Values.postgresql.auth.existingSecret $) -}}
+    {{- end -}}
+{{- else -}}
+    {{- default (printf "%s-externaldb" .Release.Name) (tpl .Values.externalDatabase.existingSecret $) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Add environment variables to configure database values
+*/}}
+{{- define "keycloak.databaseSecretKey" -}}
+{{- if .Values.postgresql.enabled -}}
+    {{- print "password" -}}
+{{- else -}}
+    {{- if .Values.externalDatabase.existingSecret -}}
+        {{- if .Values.externalDatabase.existingSecretPasswordKey -}}
+            {{- printf "%s" .Values.externalDatabase.existingSecretPasswordKey -}}
+        {{- else -}}
+            {{- print "db-password" -}}
+        {{- end -}}
+    {{- else -}}
+        {{- print "db-password" -}}
+    {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the Keycloak initdb scripts configmap
+*/}}
+{{- define "keycloak.initdbScriptsCM" -}}
+{{- if .Values.initdbScriptsConfigMap -}}
+    {{- printf "%s" .Values.initdbScriptsConfigMap -}}
+{{- else -}}
+    {{- printf "%s-init-scripts" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the secret containing the Keycloak admin password
+*/}}
+{{- define "keycloak.secretName" -}}
+{{- $secretName := .Values.auth.existingSecret -}}
+{{- if $secretName -}}
+    {{- printf "%s" (tpl $secretName $) -}}
+{{- else -}}
+    {{- printf "%s" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the secret key that contains the Keycloak admin password
+*/}}
+{{- define "keycloak.secretKey" -}}
+{{- $secretName := .Values.auth.existingSecret -}}
+{{- if and $secretName .Values.auth.passwordSecretKey -}}
+    {{- printf "%s" .Values.auth.passwordSecretKey -}}
+{{- else -}}
+    {{- print "admin-password" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the secret containing Keycloak HTTPS/TLS certificates
+*/}}
+{{- define "keycloak.tlsSecretName" -}}
+{{- $secretName := .Values.tls.existingSecret -}}
+{{- if $secretName -}}
+    {{- printf "%s" (tpl $secretName $) -}}
+{{- else -}}
+    {{- printf "%s-crt" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the secret containing Keycloak HTTPS/TLS keystore and truststore passwords
+*/}}
+{{- define "keycloak.tlsPasswordsSecretName" -}}
+{{- $secretName := .Values.tls.passwordsSecret -}}
+{{- if $secretName -}}
+    {{- printf "%s" (tpl $secretName $) -}}
+{{- else -}}
+    {{- printf "%s-tls-passwords" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the secret containing Keycloak SPI TLS certificates
+*/}}
+{{- define "keycloak.spiPasswordsSecretName" -}}
+{{- $secretName := .Values.spi.passwordsSecret -}}
+{{- if $secretName -}}
+    {{- printf "%s" (tpl $secretName $) -}}
+{{- else -}}
+    {{- printf "%s-spi-passwords" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return true if a TLS secret object should be created
+*/}}
+{{- define "keycloak.createTlsSecret" -}}
+{{- if and .Values.tls.enabled .Values.tls.autoGenerated (not .Values.tls.existingSecret) }}
+    {{- true -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Compile all warnings into a single message.
+*/}}
+{{- define "keycloak.validateValues" -}}
 {{- $messages := list -}}
-{{- $messages := append $messages (include "rabbitmq.validateValues.ldap" .) -}}
-{{- $messages := append $messages (include "rabbitmq.validateValues.memoryHighWatermark" .) -}}
-{{- $messages := append $messages (include "rabbitmq.validateValues.ingress.tls" .) -}}
-{{- $messages := append $messages (include "rabbitmq.validateValues.auth.tls" .) -}}
+{{- $messages := append $messages (include "keycloak.validateValues.database" .) -}}
+{{- $messages := append $messages (include "keycloak.validateValues.tls" .) -}}
+{{- $messages := append $messages (include "keycloak.validateValues.production" .) -}}
 {{- $messages := without $messages "" -}}
 {{- $message := join "\n" $messages -}}
 
@@ -141,123 +282,33 @@ Compile all warnings into a single message, and call fail.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Validate values of rabbitmq - LDAP support
-*/}}
-{{- define "rabbitmq.validateValues.ldap" -}}
-{{- if .Values.ldap.enabled }}
-{{- $serversListLength := len .Values.ldap.servers }}
-{{- $userDnPattern := coalesce .Values.ldap.user_dn_pattern .Values.ldap.userDnPattern }}
-{{- if or (and (not (gt $serversListLength 0)) (empty .Values.ldap.uri)) (and (not $userDnPattern) (not .Values.ldap.basedn)) }}
-rabbitmq: LDAP
-    Invalid LDAP configuration. When enabling LDAP support, the parameters "ldap.servers" or "ldap.uri" are mandatory
-    to configure the connection and "ldap.userDnPattern" or "ldap.basedn" are necessary to lookup the users. Please provide them:
-    $ helm install {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/rabbitmq \
-      --set ldap.enabled=true \
-      --set ldap.servers[0]=my-ldap-server" \
-      --set ldap.port="389" \
-      --set ldap.userDnPattern="cn=${username},dc=example,dc=org"
-{{- end -}}
+{{/* Validate values of Keycloak - database */}}
+{{- define "keycloak.validateValues.database" -}}
+{{- if and (not .Values.postgresql.enabled) (not .Values.externalDatabase.host) (and (not .Values.externalDatabase.password) (not .Values.externalDatabase.existingSecret)) -}}
+keycloak: database
+    You disabled the PostgreSQL sub-chart but did not specify an external PostgreSQL host.
+    Either deploy the PostgreSQL sub-chart (--set postgresql.enabled=true),
+    or set a value for the external database host (--set externalDatabase.host=FOO)
+    and set a value for the external database password (--set externalDatabase.password=BAR)
+    or existing secret (--set externalDatabase.existingSecret=BAR).
 {{- end -}}
 {{- end -}}
 
-{{/*
-Validate values of rabbitmq - Memory high watermark
-*/}}
-{{- define "rabbitmq.validateValues.memoryHighWatermark" -}}
-{{- if and (not (eq .Values.memoryHighWatermark.type "absolute")) (not (eq .Values.memoryHighWatermark.type "relative")) }}
-rabbitmq: memoryHighWatermark.type
-    Invalid Memory high watermark type. Valid values are "absolute" and
-    "relative". Please set a valid mode (--set memoryHighWatermark.type="xxxx")
-{{- else if and .Values.memoryHighWatermark.enabled (not .Values.resources.limits.memory) (eq .Values.memoryHighWatermark.type "relative") }}
-rabbitmq: memoryHighWatermark
-    You enabled configuring memory high watermark using a relative limit. However,
-    no memory limits were defined at POD level. Define your POD limits as shown below:
-
-    $ helm install {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/rabbitmq \
-      --set memoryHighWatermark.enabled=true \
-      --set memoryHighWatermark.type="relative" \
-      --set memoryHighWatermark.value="0.4" \
-      --set resources.limits.memory="2Gi"
-
-    Altenatively, user an absolute value for the memory memory high watermark :
-
-    $ helm install {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/rabbitmq \
-      --set memoryHighWatermark.enabled=true \
-      --set memoryHighWatermark.type="absolute" \
-      --set memoryHighWatermark.value="512MB"
+{{/* Validate values of Keycloak - TLS enabled */}}
+{{- define "keycloak.validateValues.tls" -}}
+{{- if and .Values.tls.enabled (not .Values.tls.autoGenerated) (not .Values.tls.existingSecret) }}
+keycloak: tls.enabled
+    In order to enable TLS, you also need to provide
+    an existing secret containing the Keystore and Truststore or
+    enable auto-generated certificates.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Validate values of rabbitmq - TLS configuration for Ingress
-*/}}
-{{- define "rabbitmq.validateValues.ingress.tls" -}}
-{{- if and .Values.ingress.enabled .Values.ingress.tls (not (include "common.ingress.certManagerRequest" ( dict "annotations" .Values.ingress.annotations ))) (not .Values.ingress.selfSigned) (empty .Values.ingress.extraTls) }}
-rabbitmq: ingress.tls
-    You enabled the TLS configuration for the default ingress hostname but
-    you did not enable any of the available mechanisms to create the TLS secret
-    to be used by the Ingress Controller.
-    Please use any of these alternatives:
-      - Use the `ingress.extraTls` and `ingress.secrets` parameters to provide your custom TLS certificates.
-      - Rely on cert-manager to create it by setting the corresponding annotations
-      - Rely on Helm to create self-signed certificates by setting `ingress.selfSigned=true`
-{{- end -}}
-{{- end -}}
-
-{{/*
-Validate values of RabbitMQ - Auth TLS enabled
-*/}}
-{{- define "rabbitmq.validateValues.auth.tls" -}}
-{{- if and .Values.auth.tls.enabled (not .Values.auth.tls.autoGenerated) (not .Values.auth.tls.existingSecret) (not .Values.auth.tls.caCertificate) (not .Values.auth.tls.serverCertificate) (not .Values.auth.tls.serverKey) }}
-rabbitmq: auth.tls
-    You enabled TLS for RabbitMQ but you did not enable any of the available mechanisms to create the TLS secret.
-    Please use any of these alternatives:
-      - Provide an existing secret containing the TLS certificates using `auth.tls.existingSecret`
-      - Provide the plain text certificates using `auth.tls.caCertificate`, `auth.tls.serverCertificate` and `auth.tls.serverKey`.
-      - Enable auto-generated certificates using `auth.tls.autoGenerated`.
-{{- end -}}
-{{- end -}}
-
-{{/*
-Get the initialization scripts volume name.
-*/}}
-{{- define "rabbitmq.initScripts" -}}
-{{- printf "%s-init-scripts" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{/*
-Returns the available value for certain key in an existing secret (if it exists),
-otherwise it generates a random value.
-*/}}
-{{- define "getValueFromSecret" }}
-    {{- $len := (default 16 .Length) | int -}}
-    {{- $obj := (lookup "v1" "Secret" .Namespace .Name).data -}}
-    {{- if $obj }}
-        {{- index $obj .Key | b64dec -}}
-    {{- else -}}
-        {{- randAlphaNum $len -}}
-    {{- end -}}
-{{- end }}
-
-{{/*
-Get the extraConfigurationExistingSecret secret.
-*/}}
-{{- define "rabbitmq.extraConfiguration" -}}
-{{- if not (empty .Values.extraConfigurationExistingSecret) -}}
-    {{- include "getValueFromSecret" (dict "Namespace" .Release.Namespace "Name" .Values.extraConfigurationExistingSecret "Length" 10 "Key" "extraConfiguration")  -}}
-{{- else -}}
-    {{- tpl .Values.extraConfiguration . -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Get the TLS.sslOptions.Password secret.
-*/}}
-{{- define "rabbitmq.tlsSslOptionsPassword" -}}
-{{- if not (empty .Values.auth.tls.sslOptionsPassword.password) -}}
-    {{- .Values.auth.tls.sslOptionsPassword.password -}}
-{{- else -}}
-    {{- include "getValueFromSecret" (dict "Namespace" .Release.Namespace "Name" .Values.auth.tls.sslOptionsPassword.existingSecret "Length" 10 "Key" .Values.auth.tls.sslOptionsPassword.key)  -}}
+{{/* Validate values of Keycloak - Production mode enabled */}}
+{{- define "keycloak.validateValues.production" -}}
+{{- if and .Values.production (not .Values.tls.enabled) (not (eq .Values.proxy "edge")) -}}
+keycloak: production
+    In order to enable Production mode, you also need to enable HTTPS/TLS
+    using the value 'tls.enabled' and providing an existing secret containing the Keystore and Trustore.
 {{- end -}}
 {{- end -}}

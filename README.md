@@ -1,22 +1,24 @@
-<!--- app-name: RabbitMQ -->
+<!--- app-name: Keycloak -->
 
-# RabbitMQ packaged by Bitnami
+# Keycloak packaged by Bitnami
 
-RabbitMQ is an open source general-purpose message broker that is designed for consistent, highly-available messaging scenarios (both synchronous and asynchronous).
+Keycloak is a high performance Java-based identity and access management solution. It lets developers add an authentication layer to their applications with minimum effort.
 
-[Overview of RabbitMQ](https://www.rabbitmq.com)
+[Overview of Keycloak](https://www.keycloak.org/)
 
 Trademarks: This software listing is packaged by Bitnami. The respective trademarks mentioned in the offering are owned by the respective companies, and use of them does not imply any affiliation or endorsement.
 
 ## TL;DR
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/rabbitmq
+helm install my-release oci://registry-1.docker.io/bitnamicharts/keycloak
 ```
 
 ## Introduction
 
-This chart bootstraps a [RabbitMQ](https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq) deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+Bitnami charts for Helm are carefully engineered, actively maintained and are the quickest and easiest way to deploy containers on a Kubernetes cluster that are ready to handle production workloads.
+
+This chart bootstraps a [Keycloak](https://github.com/bitnami/containers/tree/main/bitnami/keycloak) deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 Bitnami charts can be used with [Kubeapps](https://kubeapps.dev/) for deployment and management of Helm Charts in clusters.
 
@@ -24,17 +26,16 @@ Bitnami charts can be used with [Kubeapps](https://kubeapps.dev/) for deployment
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
-- PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/rabbitmq
+helm install my-release oci://registry-1.docker.io/bitnamicharts/keycloak
 ```
 
-The command deploys RabbitMQ on the Kubernetes cluster in the default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
+These commands deploy a Keycloak application on the Kubernetes cluster in the default configuration.
 
 > **Tip**: List all releases using `helm list`
 
@@ -58,331 +59,308 @@ The command removes all the Kubernetes components associated with the chart and 
 | `global.imagePullSecrets` | Global Docker registry secret names as an array | `[]`  |
 | `global.storageClass`     | Global StorageClass for Persistent Volume(s)    | `""`  |
 
-### RabbitMQ Image parameters
-
-| Name                | Description                                                                                              | Value                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `image.registry`    | RabbitMQ image registry                                                                                  | `docker.io`            |
-| `image.repository`  | RabbitMQ image repository                                                                                | `bitnami/rabbitmq`     |
-| `image.tag`         | RabbitMQ image tag (immutable tags are recommended)                                                      | `3.11.15-debian-11-r0` |
-| `image.digest`      | RabbitMQ image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                   |
-| `image.pullPolicy`  | RabbitMQ image pull policy                                                                               | `IfNotPresent`         |
-| `image.pullSecrets` | Specify docker-registry secret names as an array                                                         | `[]`                   |
-| `image.debug`       | Set to true if you would like to see extra information on logs                                           | `false`                |
-
 ### Common parameters
 
-| Name                                         | Description                                                                                                                                                             | Value                                             |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `nameOverride`                               | String to partially override rabbitmq.fullname template (will maintain the release name)                                                                                | `""`                                              |
-| `fullnameOverride`                           | String to fully override rabbitmq.fullname template                                                                                                                     | `""`                                              |
-| `namespaceOverride`                          | String to fully override common.names.namespace                                                                                                                         | `""`                                              |
-| `kubeVersion`                                | Force target Kubernetes version (using Helm capabilities if not set)                                                                                                    | `""`                                              |
-| `clusterDomain`                              | Kubernetes Cluster Domain                                                                                                                                               | `cluster.local`                                   |
-| `extraDeploy`                                | Array of extra objects to deploy with the release                                                                                                                       | `[]`                                              |
-| `commonAnnotations`                          | Annotations to add to all deployed objects                                                                                                                              | `{}`                                              |
-| `servicenameOverride`                        | String to partially override headless service name                                                                                                                      | `""`                                              |
-| `commonLabels`                               | Labels to add to all deployed objects                                                                                                                                   | `{}`                                              |
-| `serviceBindings.enabled`                    | Create secret for service binding (Experimental)                                                                                                                        | `false`                                           |
-| `diagnosticMode.enabled`                     | Enable diagnostic mode (all probes will be disabled and the command will be overridden)                                                                                 | `false`                                           |
-| `diagnosticMode.command`                     | Command to override all containers in the deployment                                                                                                                    | `["sleep"]`                                       |
-| `diagnosticMode.args`                        | Args to override all containers in the deployment                                                                                                                       | `["infinity"]`                                    |
-| `hostAliases`                                | Deployment pod host aliases                                                                                                                                             | `[]`                                              |
-| `dnsPolicy`                                  | DNS Policy for pod                                                                                                                                                      | `""`                                              |
-| `dnsConfig`                                  | DNS Configuration pod                                                                                                                                                   | `{}`                                              |
-| `auth.username`                              | RabbitMQ application username                                                                                                                                           | `user`                                            |
-| `auth.password`                              | RabbitMQ application password                                                                                                                                           | `""`                                              |
-| `auth.securePassword`                        | Whether to set the RabbitMQ password securely. This is incompatible with loading external RabbitMQ definitions and 'true' when not setting the auth.password parameter. | `true`                                            |
-| `auth.existingPasswordSecret`                | Existing secret with RabbitMQ credentials (must contain a value for `rabbitmq-password` key)                                                                            | `""`                                              |
-| `auth.enableLoopbackUser`                    | Enable Loopback user access? Be advised, that enabling the loopback user is a possible security risk!                                                                   | `false`                                           |
-| `auth.erlangCookie`                          | Erlang cookie to determine whether different nodes are allowed to communicate with each other                                                                           | `""`                                              |
-| `auth.existingErlangSecret`                  | Existing secret with RabbitMQ Erlang cookie (must contain a value for `rabbitmq-erlang-cookie` key)                                                                     | `""`                                              |
-| `auth.tls.enabled`                           | Enable TLS support on RabbitMQ                                                                                                                                          | `false`                                           |
-| `auth.tls.autoGenerated`                     | Generate automatically self-signed TLS certificates                                                                                                                     | `false`                                           |
-| `auth.tls.failIfNoPeerCert`                  | When set to true, TLS connection will be rejected if client fails to provide a certificate                                                                              | `true`                                            |
-| `auth.tls.sslOptionsVerify`                  | Should [peer verification](https://www.rabbitmq.com/ssl.html#peer-verification) be enabled?                                                                             | `verify_peer`                                     |
-| `auth.tls.sslOptionsPassword.enabled`        | Enable usage of password for private Key                                                                                                                                | `false`                                           |
-| `auth.tls.sslOptionsPassword.existingSecret` | Name of existing Secret containing the sslOptionsPassword                                                                                                               | `""`                                              |
-| `auth.tls.sslOptionsPassword.key`            | Enable Key referring to sslOptionsPassword in Secret specified in auth.tls.sslOptionsPassword.existingSecret                                                            | `""`                                              |
-| `auth.tls.sslOptionsPassword.password`       | Use this string as Password. If set, auth.tls.sslOptionsPassword.existingSecret and auth.tls.sslOptionsPassword.key are ignored                                         | `""`                                              |
-| `auth.tls.caCertificate`                     | Certificate Authority (CA) bundle content                                                                                                                               | `""`                                              |
-| `auth.tls.serverCertificate`                 | Server certificate content                                                                                                                                              | `""`                                              |
-| `auth.tls.serverKey`                         | Server private key content                                                                                                                                              | `""`                                              |
-| `auth.tls.existingSecret`                    | Existing secret with certificate content to RabbitMQ credentials                                                                                                        | `""`                                              |
-| `auth.tls.existingSecretFullChain`           | Whether or not the existing secret contains the full chain in the certificate (`tls.crt`). Will be used in place of `ca.cert` if `true`.                                | `false`                                           |
-| `auth.tls.overrideCaCertificate`             | Existing secret with certificate content be mounted instead of the `ca.crt` coming from caCertificate or existingSecret/existingSecretFullChain.                        | `""`                                              |
-| `logs`                                       | Path of the RabbitMQ server's Erlang log file. Value for the `RABBITMQ_LOGS` environment variable                                                                       | `-`                                               |
-| `ulimitNofiles`                              | RabbitMQ Max File Descriptors                                                                                                                                           | `65536`                                           |
-| `maxAvailableSchedulers`                     | RabbitMQ maximum available scheduler threads                                                                                                                            | `""`                                              |
-| `onlineSchedulers`                           | RabbitMQ online scheduler threads                                                                                                                                       | `""`                                              |
-| `memoryHighWatermark.enabled`                | Enable configuring Memory high watermark on RabbitMQ                                                                                                                    | `false`                                           |
-| `memoryHighWatermark.type`                   | Memory high watermark type. Either `absolute` or `relative`                                                                                                             | `relative`                                        |
-| `memoryHighWatermark.value`                  | Memory high watermark value                                                                                                                                             | `0.4`                                             |
-| `plugins`                                    | List of default plugins to enable (should only be altered to remove defaults; for additional plugins use `extraPlugins`)                                                | `rabbitmq_management rabbitmq_peer_discovery_k8s` |
-| `communityPlugins`                           | List of Community plugins (URLs) to be downloaded during container initialization                                                                                       | `""`                                              |
-| `extraPlugins`                               | Extra plugins to enable (single string containing a space-separated list)                                                                                               | `rabbitmq_auth_backend_ldap`                      |
-| `clustering.enabled`                         | Enable RabbitMQ clustering                                                                                                                                              | `true`                                            |
-| `clustering.addressType`                     | Switch clustering mode. Either `ip` or `hostname`                                                                                                                       | `hostname`                                        |
-| `clustering.rebalance`                       | Rebalance master for queues in cluster when new replica is created                                                                                                      | `false`                                           |
-| `clustering.forceBoot`                       | Force boot of an unexpectedly shut down cluster (in an unexpected order).                                                                                               | `false`                                           |
-| `clustering.partitionHandling`               | Switch Partition Handling Strategy. Either `autoheal` or `pause-minority` or `pause-if-all-down` or `ignore`                                                            | `autoheal`                                        |
-| `loadDefinition.enabled`                     | Enable loading a RabbitMQ definitions file to configure RabbitMQ                                                                                                        | `false`                                           |
-| `loadDefinition.file`                        | Name of the definitions file                                                                                                                                            | `/app/load_definition.json`                       |
-| `loadDefinition.existingSecret`              | Existing secret with the load definitions file                                                                                                                          | `""`                                              |
-| `command`                                    | Override default container command (useful when using custom images)                                                                                                    | `[]`                                              |
-| `args`                                       | Override default container args (useful when using custom images)                                                                                                       | `[]`                                              |
-| `lifecycleHooks`                             | Overwrite livecycle for the RabbitMQ container(s) to automate configuration before or after startup                                                                     | `{}`                                              |
-| `terminationGracePeriodSeconds`              | Default duration in seconds k8s waits for container to exit before sending kill signal.                                                                                 | `120`                                             |
-| `extraEnvVars`                               | Extra environment variables to add to RabbitMQ pods                                                                                                                     | `[]`                                              |
-| `extraEnvVarsCM`                             | Name of existing ConfigMap containing extra environment variables                                                                                                       | `""`                                              |
-| `extraEnvVarsSecret`                         | Name of existing Secret containing extra environment variables (in case of sensitive data)                                                                              | `""`                                              |
-| `containerPorts.amqp`                        |                                                                                                                                                                         | `5672`                                            |
-| `containerPorts.amqpTls`                     |                                                                                                                                                                         | `5671`                                            |
-| `containerPorts.dist`                        |                                                                                                                                                                         | `25672`                                           |
-| `containerPorts.manager`                     |                                                                                                                                                                         | `15672`                                           |
-| `containerPorts.epmd`                        |                                                                                                                                                                         | `4369`                                            |
-| `containerPorts.metrics`                     |                                                                                                                                                                         | `9419`                                            |
-| `initScripts`                                | Dictionary of init scripts. Evaluated as a template.                                                                                                                    | `{}`                                              |
-| `initScriptsCM`                              | ConfigMap with the init scripts. Evaluated as a template.                                                                                                               | `""`                                              |
-| `initScriptsSecret`                          | Secret containing `/docker-entrypoint-initdb.d` scripts to be executed at initialization time that contain sensitive data. Evaluated as a template.                     | `""`                                              |
-| `extraContainerPorts`                        | Extra ports to be included in container spec, primarily informational                                                                                                   | `[]`                                              |
-| `configuration`                              | RabbitMQ Configuration file content: required cluster configuration                                                                                                     | `""`                                              |
-| `tcpListenOptions.backlog`                   | Maximum size of the unaccepted TCP connections queue                                                                                                                    | `128`                                             |
-| `tcpListenOptions.nodelay`                   | When set to true, deactivates Nagle's algorithm. Default is true. Highly recommended for most users.                                                                    | `true`                                            |
-| `tcpListenOptions.linger.lingerOn`           | Enable Server socket lingering                                                                                                                                          | `true`                                            |
-| `tcpListenOptions.linger.timeout`            | Server Socket lingering timeout                                                                                                                                         | `0`                                               |
-| `tcpListenOptions.keepalive`                 | When set to true, enables TCP keepalives                                                                                                                                | `false`                                           |
-| `configurationExistingSecret`                | Existing secret with the configuration to use as rabbitmq.conf.                                                                                                         | `""`                                              |
-| `extraConfiguration`                         | Configuration file content: extra configuration to be appended to RabbitMQ configuration                                                                                | `""`                                              |
-| `extraConfigurationExistingSecret`           | Existing secret with the extra configuration to append to `configuration`.                                                                                              | `""`                                              |
-| `advancedConfiguration`                      | Configuration file content: advanced configuration                                                                                                                      | `""`                                              |
-| `advancedConfigurationExistingSecret`        | Existing secret with the advanced configuration file (must contain a key `advanced.config`).                                                                            | `""`                                              |
-| `featureFlags`                               | that controls what features are considered to be enabled or available on all cluster nodes.                                                                             | `""`                                              |
-| `ldap.enabled`                               | Enable LDAP support                                                                                                                                                     | `false`                                           |
-| `ldap.uri`                                   | LDAP connection string.                                                                                                                                                 | `""`                                              |
-| `ldap.servers`                               | List of LDAP servers hostnames. This is valid only if ldap.uri is not set                                                                                               | `[]`                                              |
-| `ldap.port`                                  | LDAP servers port. This is valid only if ldap.uri is not set                                                                                                            | `""`                                              |
-| `ldap.userDnPattern`                         | Pattern used to translate the provided username into a value to be used for the LDAP bind.                                                                              | `""`                                              |
-| `ldap.binddn`                                | DN of the account used to search in the LDAP server.                                                                                                                    | `""`                                              |
-| `ldap.bindpw`                                | Password for binddn account.                                                                                                                                            | `""`                                              |
-| `ldap.basedn`                                | Base DN path where binddn account will search for the users.                                                                                                            | `""`                                              |
-| `ldap.uidField`                              | Field used to match with the user name (uid, samAccountName, cn, etc). It matches with 'dn_lookup_attribute' in RabbitMQ configuration                                  | `""`                                              |
-| `ldap.uidField`                              | Field used to match with the user name (uid, samAccountName, cn, etc). It matches with 'dn_lookup_attribute' in RabbitMQ configuration                                  | `""`                                              |
-| `ldap.authorisationEnabled`                  | Enable LDAP authorisation. Please set 'advancedConfiguration' with tag, topic, resources and vhost mappings                                                             | `false`                                           |
-| `ldap.tls.enabled`                           | Enabled TLS configuration.                                                                                                                                              | `false`                                           |
-| `ldap.tls.startTls`                          | Use STARTTLS instead of LDAPS.                                                                                                                                          | `false`                                           |
-| `ldap.tls.skipVerify`                        | Skip any SSL verification (hostanames or certificates)                                                                                                                  | `false`                                           |
-| `ldap.tls.verify`                            | Verify connection. Valid values are 'verify_peer' or 'verify_none'                                                                                                      | `verify_peer`                                     |
-| `ldap.tls.certificatesMountPath`             | Where LDAP certifcates are mounted.                                                                                                                                     | `/opt/bitnami/rabbitmq/ldap/certs`                |
-| `ldap.tls.certificatesSecret`                | Secret with LDAP certificates.                                                                                                                                          | `""`                                              |
-| `ldap.tls.CAFilename`                        | CA certificate filename. Should match with the CA entry key in the ldap.tls.certificatesSecret.                                                                         | `""`                                              |
-| `ldap.tls.certFilename`                      | Client certificate filename to authenticate against the LDAP server. Should match with certificate the entry key in the ldap.tls.certificatesSecret.                    | `""`                                              |
-| `ldap.tls.certKeyFilename`                   | Client Key filename to authenticate against the LDAP server. Should match with certificate the entry key in the ldap.tls.certificatesSecret.                            | `""`                                              |
-| `extraVolumeMounts`                          | Optionally specify extra list of additional volumeMounts                                                                                                                | `[]`                                              |
-| `extraVolumes`                               | Optionally specify extra list of additional volumes .                                                                                                                   | `[]`                                              |
-| `extraSecrets`                               | Optionally specify extra secrets to be created by the chart.                                                                                                            | `{}`                                              |
-| `extraSecretsPrependReleaseName`             | Set this flag to true if extraSecrets should be created with <release-name> prepended.                                                                                  | `false`                                           |
+| Name                     | Description                                                                             | Value           |
+| ------------------------ | --------------------------------------------------------------------------------------- | --------------- |
+| `kubeVersion`            | Force target Kubernetes version (using Helm capabilities if not set)                    | `""`            |
+| `nameOverride`           | String to partially override common.names.fullname                                      | `""`            |
+| `fullnameOverride`       | String to fully override common.names.fullname                                          | `""`            |
+| `namespaceOverride`      | String to fully override common.names.namespace                                         | `""`            |
+| `commonLabels`           | Labels to add to all deployed objects                                                   | `{}`            |
+| `enableServiceLinks`     | If set to false, disable Kubernetes service links in the pod spec                       | `true`          |
+| `commonAnnotations`      | Annotations to add to all deployed objects                                              | `{}`            |
+| `clusterDomain`          | Default Kubernetes cluster domain                                                       | `cluster.local` |
+| `extraDeploy`            | Array of extra objects to deploy with the release                                       | `[]`            |
+| `diagnosticMode.enabled` | Enable diagnostic mode (all probes will be disabled and the command will be overridden) | `false`         |
+| `diagnosticMode.command` | Command to override all containers in the the statefulset                               | `["sleep"]`     |
+| `diagnosticMode.args`    | Args to override all containers in the the statefulset                                  | `["infinity"]`  |
 
-### Statefulset parameters
+### Keycloak parameters
+
+| Name                             | Description                                                                                                                  | Value                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `image.registry`                 | Keycloak image registry                                                                                                      | `docker.io`                   |
+| `image.repository`               | Keycloak image repository                                                                                                    | `bitnami/keycloak`            |
+| `image.tag`                      | Keycloak image tag (immutable tags are recommended)                                                                          | `21.1.1-debian-11-r0`         |
+| `image.digest`                   | Keycloak image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag                     | `""`                          |
+| `image.pullPolicy`               | Keycloak image pull policy                                                                                                   | `IfNotPresent`                |
+| `image.pullSecrets`              | Specify docker-registry secret names as an array                                                                             | `[]`                          |
+| `image.debug`                    | Specify if debug logs should be enabled                                                                                      | `false`                       |
+| `auth.adminUser`                 | Keycloak administrator user                                                                                                  | `user`                        |
+| `auth.adminPassword`             | Keycloak administrator password for the new user                                                                             | `""`                          |
+| `auth.existingSecret`            | Existing secret containing Keycloak admin password                                                                           | `""`                          |
+| `auth.passwordSecretKey`         | Key where the Keycloak admin password is being stored inside the existing secret.                                            | `""`                          |
+| `tls.enabled`                    | Enable TLS encryption. Required for HTTPs traffic.                                                                           | `false`                       |
+| `tls.autoGenerated`              | Generate automatically self-signed TLS certificates. Currently only supports PEM certificates                                | `false`                       |
+| `tls.existingSecret`             | Existing secret containing the TLS certificates per Keycloak replica                                                         | `""`                          |
+| `tls.usePem`                     | Use PEM certificates as input instead of PKS12/JKS stores                                                                    | `false`                       |
+| `tls.truststoreFilename`         | Truststore filename inside the existing secret                                                                               | `keycloak.truststore.jks`     |
+| `tls.keystoreFilename`           | Keystore filename inside the existing secret                                                                                 | `keycloak.keystore.jks`       |
+| `tls.keystorePassword`           | Password to access the keystore when it's password-protected                                                                 | `""`                          |
+| `tls.truststorePassword`         | Password to access the truststore when it's password-protected                                                               | `""`                          |
+| `tls.passwordsSecret`            | Secret containing the Keystore and Truststore passwords.                                                                     | `""`                          |
+| `spi.existingSecret`             | Existing secret containing the Keycloak truststore for SPI connection over HTTPS/TLS                                         | `""`                          |
+| `spi.truststorePassword`         | Password to access the truststore when it's password-protected                                                               | `""`                          |
+| `spi.truststoreFilename`         | Truststore filename inside the existing secret                                                                               | `keycloak-spi.truststore.jks` |
+| `spi.passwordsSecret`            | Secret containing the SPI Truststore passwords.                                                                              | `""`                          |
+| `spi.hostnameVerificationPolicy` | Verify the hostname of the server’s certificate. Allowed values: "ANY", "WILDCARD", "STRICT".                                | `""`                          |
+| `production`                     | Run Keycloak in production mode. TLS configuration is required except when using proxy=edge.                                 | `false`                       |
+| `proxy`                          | reverse Proxy mode edge, reencrypt, passthrough or none                                                                      | `passthrough`                 |
+| `httpRelativePath`               | Set the path relative to '/' for serving resources. Useful if you are migrating from older version which were using '/auth/' | `/`                           |
+| `configuration`                  | Keycloak Configuration. Auto-generated based on other parameters when not specified                                          | `""`                          |
+| `existingConfigmap`              | Name of existing ConfigMap with Keycloak configuration                                                                       | `""`                          |
+| `extraStartupArgs`               | Extra default startup args                                                                                                   | `""`                          |
+| `initdbScripts`                  | Dictionary of initdb scripts                                                                                                 | `{}`                          |
+| `initdbScriptsConfigMap`         | ConfigMap with the initdb scripts (Note: Overrides `initdbScripts`)                                                          | `""`                          |
+| `command`                        | Override default container command (useful when using custom images)                                                         | `[]`                          |
+| `args`                           | Override default container args (useful when using custom images)                                                            | `[]`                          |
+| `extraEnvVars`                   | Extra environment variables to be set on Keycloak container                                                                  | `[]`                          |
+| `extraEnvVarsCM`                 | Name of existing ConfigMap containing extra env vars                                                                         | `""`                          |
+| `extraEnvVarsSecret`             | Name of existing Secret containing extra env vars                                                                            | `""`                          |
+
+### Keycloak statefulset parameters
 
 | Name                                    | Description                                                                                                              | Value           |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------- |
-| `replicaCount`                          | Number of RabbitMQ replicas to deploy                                                                                    | `1`             |
-| `schedulerName`                         | Use an alternate scheduler, e.g. "stork".                                                                                | `""`            |
-| `podManagementPolicy`                   | Pod management policy                                                                                                    | `OrderedReady`  |
-| `podLabels`                             | RabbitMQ Pod labels. Evaluated as a template                                                                             | `{}`            |
-| `podAnnotations`                        | RabbitMQ Pod annotations. Evaluated as a template                                                                        | `{}`            |
-| `updateStrategy.type`                   | Update strategy type for RabbitMQ statefulset                                                                            | `RollingUpdate` |
-| `statefulsetLabels`                     | RabbitMQ statefulset labels. Evaluated as a template                                                                     | `{}`            |
-| `statefulsetAnnotations`                | RabbitMQ statefulset annotations. Evaluated as a template                                                                | `{}`            |
-| `priorityClassName`                     | Name of the priority class to be used by RabbitMQ pods, priority class needs to be created beforehand                    | `""`            |
+| `replicaCount`                          | Number of Keycloak replicas to deploy                                                                                    | `1`             |
+| `containerPorts.http`                   | Keycloak HTTP container port                                                                                             | `8080`          |
+| `containerPorts.https`                  | Keycloak HTTPS container port                                                                                            | `8443`          |
+| `containerPorts.infinispan`             | Keycloak infinispan container port                                                                                       | `7800`          |
+| `extraContainerPorts`                   | Optionally specify extra list of additional port-mappings for Keycloak container                                         | `[]`            |
+| `podSecurityContext.enabled`            | Enabled Keycloak pods' Security Context                                                                                  | `true`          |
+| `podSecurityContext.fsGroup`            | Set Keycloak pod's Security Context fsGroup                                                                              | `1001`          |
+| `containerSecurityContext.enabled`      | Enabled Keycloak containers' Security Context                                                                            | `true`          |
+| `containerSecurityContext.runAsUser`    | Set Keycloak container's Security Context runAsUser                                                                      | `1001`          |
+| `containerSecurityContext.runAsNonRoot` | Set Keycloak container's Security Context runAsNonRoot                                                                   | `true`          |
+| `resources.limits`                      | The resources limits for the Keycloak containers                                                                         | `{}`            |
+| `resources.requests`                    | The requested resources for the Keycloak containers                                                                      | `{}`            |
+| `livenessProbe.enabled`                 | Enable livenessProbe on Keycloak containers                                                                              | `true`          |
+| `livenessProbe.initialDelaySeconds`     | Initial delay seconds for livenessProbe                                                                                  | `300`           |
+| `livenessProbe.periodSeconds`           | Period seconds for livenessProbe                                                                                         | `1`             |
+| `livenessProbe.timeoutSeconds`          | Timeout seconds for livenessProbe                                                                                        | `5`             |
+| `livenessProbe.failureThreshold`        | Failure threshold for livenessProbe                                                                                      | `3`             |
+| `livenessProbe.successThreshold`        | Success threshold for livenessProbe                                                                                      | `1`             |
+| `readinessProbe.enabled`                | Enable readinessProbe on Keycloak containers                                                                             | `true`          |
+| `readinessProbe.initialDelaySeconds`    | Initial delay seconds for readinessProbe                                                                                 | `30`            |
+| `readinessProbe.periodSeconds`          | Period seconds for readinessProbe                                                                                        | `10`            |
+| `readinessProbe.timeoutSeconds`         | Timeout seconds for readinessProbe                                                                                       | `1`             |
+| `readinessProbe.failureThreshold`       | Failure threshold for readinessProbe                                                                                     | `3`             |
+| `readinessProbe.successThreshold`       | Success threshold for readinessProbe                                                                                     | `1`             |
+| `startupProbe.enabled`                  | Enable startupProbe on Keycloak containers                                                                               | `false`         |
+| `startupProbe.initialDelaySeconds`      | Initial delay seconds for startupProbe                                                                                   | `30`            |
+| `startupProbe.periodSeconds`            | Period seconds for startupProbe                                                                                          | `5`             |
+| `startupProbe.timeoutSeconds`           | Timeout seconds for startupProbe                                                                                         | `1`             |
+| `startupProbe.failureThreshold`         | Failure threshold for startupProbe                                                                                       | `60`            |
+| `startupProbe.successThreshold`         | Success threshold for startupProbe                                                                                       | `1`             |
+| `customLivenessProbe`                   | Custom Liveness probes for Keycloak                                                                                      | `{}`            |
+| `customReadinessProbe`                  | Custom Rediness probes Keycloak                                                                                          | `{}`            |
+| `customStartupProbe`                    | Custom Startup probes for Keycloak                                                                                       | `{}`            |
+| `lifecycleHooks`                        | LifecycleHooks to set additional configuration at startup                                                                | `{}`            |
+| `hostAliases`                           | Deployment pod host aliases                                                                                              | `[]`            |
+| `podLabels`                             | Extra labels for Keycloak pods                                                                                           | `{}`            |
+| `podAnnotations`                        | Annotations for Keycloak pods                                                                                            | `{}`            |
 | `podAffinityPreset`                     | Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                      | `""`            |
 | `podAntiAffinityPreset`                 | Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                 | `soft`          |
 | `nodeAffinityPreset.type`               | Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                | `""`            |
-| `nodeAffinityPreset.key`                | Node label key to match Ignored if `affinity` is set.                                                                    | `""`            |
+| `nodeAffinityPreset.key`                | Node label key to match. Ignored if `affinity` is set.                                                                   | `""`            |
 | `nodeAffinityPreset.values`             | Node label values to match. Ignored if `affinity` is set.                                                                | `[]`            |
-| `affinity`                              | Affinity for pod assignment. Evaluated as a template                                                                     | `{}`            |
-| `nodeSelector`                          | Node labels for pod assignment. Evaluated as a template                                                                  | `{}`            |
-| `tolerations`                           | Tolerations for pod assignment. Evaluated as a template                                                                  | `[]`            |
+| `affinity`                              | Affinity for pod assignment                                                                                              | `{}`            |
+| `nodeSelector`                          | Node labels for pod assignment                                                                                           | `{}`            |
+| `tolerations`                           | Tolerations for pod assignment                                                                                           | `[]`            |
 | `topologySpreadConstraints`             | Topology Spread Constraints for pod assignment spread across your cluster among failure-domains. Evaluated as a template | `[]`            |
-| `podSecurityContext.enabled`            | Enable RabbitMQ pods' Security Context                                                                                   | `true`          |
-| `podSecurityContext.fsGroup`            | Set RabbitMQ pod's Security Context fsGroup                                                                              | `1001`          |
-| `containerSecurityContext.enabled`      | Enabled RabbitMQ containers' Security Context                                                                            | `true`          |
-| `containerSecurityContext.runAsUser`    | Set RabbitMQ containers' Security Context runAsUser                                                                      | `1001`          |
-| `containerSecurityContext.runAsNonRoot` | Set RabbitMQ container's Security Context runAsNonRoot                                                                   | `true`          |
-| `resources.limits`                      | The resources limits for RabbitMQ containers                                                                             | `{}`            |
-| `resources.requests`                    | The requested resources for RabbitMQ containers                                                                          | `{}`            |
-| `livenessProbe.enabled`                 | Enable livenessProbe                                                                                                     | `true`          |
-| `livenessProbe.initialDelaySeconds`     | Initial delay seconds for livenessProbe                                                                                  | `120`           |
-| `livenessProbe.periodSeconds`           | Period seconds for livenessProbe                                                                                         | `30`            |
-| `livenessProbe.timeoutSeconds`          | Timeout seconds for livenessProbe                                                                                        | `20`            |
-| `livenessProbe.failureThreshold`        | Failure threshold for livenessProbe                                                                                      | `6`             |
-| `livenessProbe.successThreshold`        | Success threshold for livenessProbe                                                                                      | `1`             |
-| `readinessProbe.enabled`                | Enable readinessProbe                                                                                                    | `true`          |
-| `readinessProbe.initialDelaySeconds`    | Initial delay seconds for readinessProbe                                                                                 | `10`            |
-| `readinessProbe.periodSeconds`          | Period seconds for readinessProbe                                                                                        | `30`            |
-| `readinessProbe.timeoutSeconds`         | Timeout seconds for readinessProbe                                                                                       | `20`            |
-| `readinessProbe.failureThreshold`       | Failure threshold for readinessProbe                                                                                     | `3`             |
-| `readinessProbe.successThreshold`       | Success threshold for readinessProbe                                                                                     | `1`             |
-| `startupProbe.enabled`                  | Enable startupProbe                                                                                                      | `false`         |
-| `startupProbe.initialDelaySeconds`      | Initial delay seconds for startupProbe                                                                                   | `10`            |
-| `startupProbe.periodSeconds`            | Period seconds for startupProbe                                                                                          | `30`            |
-| `startupProbe.timeoutSeconds`           | Timeout seconds for startupProbe                                                                                         | `20`            |
-| `startupProbe.failureThreshold`         | Failure threshold for startupProbe                                                                                       | `3`             |
-| `startupProbe.successThreshold`         | Success threshold for startupProbe                                                                                       | `1`             |
-| `customLivenessProbe`                   | Override default liveness probe                                                                                          | `{}`            |
-| `customReadinessProbe`                  | Override default readiness probe                                                                                         | `{}`            |
-| `customStartupProbe`                    | Define a custom startup probe                                                                                            | `{}`            |
-| `initContainers`                        | Add init containers to the RabbitMQ pod                                                                                  | `[]`            |
-| `sidecars`                              | Add sidecar containers to the RabbitMQ pod                                                                               | `[]`            |
-| `pdb.create`                            | Enable/disable a Pod Disruption Budget creation                                                                          | `false`         |
-| `pdb.minAvailable`                      | Minimum number/percentage of pods that should remain scheduled                                                           | `1`             |
-| `pdb.maxUnavailable`                    | Maximum number/percentage of pods that may be made unavailable                                                           | `""`            |
-
-### RBAC parameters
-
-| Name                                          | Description                                                                                | Value  |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------ | ------ |
-| `serviceAccount.create`                       | Enable creation of ServiceAccount for RabbitMQ pods                                        | `true` |
-| `serviceAccount.name`                         | Name of the created serviceAccount                                                         | `""`   |
-| `serviceAccount.automountServiceAccountToken` | Auto-mount the service account token in the pod                                            | `true` |
-| `serviceAccount.annotations`                  | Annotations for service account. Evaluated as a template. Only used if `create` is `true`. | `{}`   |
-| `rbac.create`                                 | Whether RBAC rules should be created                                                       | `true` |
-
-### Persistence parameters
-
-| Name                        | Description                                      | Value                      |
-| --------------------------- | ------------------------------------------------ | -------------------------- |
-| `persistence.enabled`       | Enable RabbitMQ data persistence using PVC       | `true`                     |
-| `persistence.storageClass`  | PVC Storage Class for RabbitMQ data volume       | `""`                       |
-| `persistence.selector`      | Selector to match an existing Persistent Volume  | `{}`                       |
-| `persistence.accessModes`   | PVC Access Modes for RabbitMQ data volume        | `["ReadWriteOnce"]`        |
-| `persistence.existingClaim` | Provide an existing PersistentVolumeClaims       | `""`                       |
-| `persistence.mountPath`     | The path the volume will be mounted at           | `/bitnami/rabbitmq/mnesia` |
-| `persistence.subPath`       | The subdirectory of the volume to mount to       | `""`                       |
-| `persistence.size`          | PVC Storage Request for RabbitMQ data volume     | `8Gi`                      |
-| `persistence.annotations`   | Persistence annotations. Evaluated as a template | `{}`                       |
-| `persistence.labels`        | Persistence labels. Evaluated as a template      | `{}`                       |
+| `podManagementPolicy`                   | Pod management policy for the Keycloak statefulset                                                                       | `Parallel`      |
+| `priorityClassName`                     | Keycloak pods' Priority Class Name                                                                                       | `""`            |
+| `schedulerName`                         | Use an alternate scheduler, e.g. "stork".                                                                                | `""`            |
+| `terminationGracePeriodSeconds`         | Seconds Keycloak pod needs to terminate gracefully                                                                       | `""`            |
+| `updateStrategy.type`                   | Keycloak statefulset strategy type                                                                                       | `RollingUpdate` |
+| `updateStrategy.rollingUpdate`          | Keycloak statefulset rolling update configuration parameters                                                             | `{}`            |
+| `extraVolumes`                          | Optionally specify extra list of additional volumes for Keycloak pods                                                    | `[]`            |
+| `extraVolumeMounts`                     | Optionally specify extra list of additional volumeMounts for Keycloak container(s)                                       | `[]`            |
+| `initContainers`                        | Add additional init containers to the Keycloak pods                                                                      | `[]`            |
+| `sidecars`                              | Add additional sidecar containers to the Keycloak pods                                                                   | `[]`            |
 
 ### Exposure parameters
 
 | Name                               | Description                                                                                                                      | Value                    |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `service.type`                     | Kubernetes Service type                                                                                                          | `ClusterIP`              |
-| `service.portEnabled`              | Amqp port. Cannot be disabled when `auth.tls.enabled` is `false`. Listener can be disabled with `listeners.tcp = none`.          | `true`                   |
-| `service.distPortEnabled`          | Erlang distribution server port                                                                                                  | `true`                   |
-| `service.managerPortEnabled`       | RabbitMQ Manager port                                                                                                            | `true`                   |
-| `service.epmdPortEnabled`          | RabbitMQ EPMD Discovery service port                                                                                             | `true`                   |
-| `service.ports.amqp`               | Amqp service port                                                                                                                | `5672`                   |
-| `service.ports.amqpTls`            | Amqp TLS service port                                                                                                            | `5671`                   |
-| `service.ports.dist`               | Erlang distribution service port                                                                                                 | `25672`                  |
-| `service.ports.manager`            | RabbitMQ Manager service port                                                                                                    | `15672`                  |
-| `service.ports.metrics`            | RabbitMQ Prometheues metrics service port                                                                                        | `9419`                   |
-| `service.ports.epmd`               | EPMD Discovery service port                                                                                                      | `4369`                   |
-| `service.portNames.amqp`           | Amqp service port name                                                                                                           | `amqp`                   |
-| `service.portNames.amqpTls`        | Amqp TLS service port name                                                                                                       | `amqp-ssl`               |
-| `service.portNames.dist`           | Erlang distribution service port name                                                                                            | `dist`                   |
-| `service.portNames.manager`        | RabbitMQ Manager service port name                                                                                               | `http-stats`             |
-| `service.portNames.metrics`        | RabbitMQ Prometheues metrics service port name                                                                                   | `metrics`                |
-| `service.portNames.epmd`           | EPMD Discovery service port name                                                                                                 | `epmd`                   |
-| `service.nodePorts.amqp`           | Node port for Ampq                                                                                                               | `""`                     |
-| `service.nodePorts.amqpTls`        | Node port for Ampq TLS                                                                                                           | `""`                     |
-| `service.nodePorts.dist`           | Node port for Erlang distribution                                                                                                | `""`                     |
-| `service.nodePorts.manager`        | Node port for RabbitMQ Manager                                                                                                   | `""`                     |
-| `service.nodePorts.epmd`           | Node port for EPMD Discovery                                                                                                     | `""`                     |
-| `service.nodePorts.metrics`        | Node port for RabbitMQ Prometheues metrics                                                                                       | `""`                     |
-| `service.extraPorts`               | Extra ports to expose in the service                                                                                             | `[]`                     |
-| `service.loadBalancerSourceRanges` | Address(es) that are allowed when service is `LoadBalancer`                                                                      | `[]`                     |
-| `service.externalIPs`              | Set the ExternalIPs                                                                                                              | `[]`                     |
-| `service.externalTrafficPolicy`    | Enable client source IP preservation                                                                                             | `Cluster`                |
-| `service.loadBalancerIP`           | Set the LoadBalancerIP                                                                                                           | `""`                     |
-| `service.clusterIP`                | Kubernetes service Cluster IP                                                                                                    | `""`                     |
-| `service.labels`                   | Service labels. Evaluated as a template                                                                                          | `{}`                     |
-| `service.annotations`              | Service annotations. Evaluated as a template                                                                                     | `{}`                     |
-| `service.annotationsHeadless`      | Headless Service annotations. Evaluated as a template                                                                            | `{}`                     |
-| `service.headless.annotations`     | Annotations for the headless service.                                                                                            | `{}`                     |
-| `service.sessionAffinity`          | Session Affinity for Kubernetes service, can be "None" or "ClientIP"                                                             | `None`                   |
+| `service.type`                     | Kubernetes service type                                                                                                          | `LoadBalancer`           |
+| `service.http.enabled`             | Enable http port on service                                                                                                      | `true`                   |
+| `service.ports.http`               | Keycloak service HTTP port                                                                                                       | `80`                     |
+| `service.ports.https`              | Keycloak service HTTPS port                                                                                                      | `443`                    |
+| `service.nodePorts`                | Specify the nodePort values for the LoadBalancer and NodePort service types.                                                     | `{}`                     |
+| `service.sessionAffinity`          | Control where client requests go, to the same pod or round-robin                                                                 | `None`                   |
 | `service.sessionAffinityConfig`    | Additional settings for the sessionAffinity                                                                                      | `{}`                     |
-| `ingress.enabled`                  | Enable ingress resource for Management console                                                                                   | `false`                  |
-| `ingress.path`                     | Path for the default host. You may need to set this to '/*' in order to use this with ALB ingress controllers.                   | `/`                      |
-| `ingress.pathType`                 | Ingress path type                                                                                                                | `ImplementationSpecific` |
-| `ingress.hostname`                 | Default host for the ingress resource                                                                                            | `rabbitmq.local`         |
-| `ingress.annotations`              | Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations. | `{}`                     |
-| `ingress.tls`                      | Enable TLS configuration for the hostname defined at `ingress.hostname` parameter                                                | `false`                  |
-| `ingress.selfSigned`               | Set this to true in order to create a TLS secret for this ingress record                                                         | `false`                  |
-| `ingress.extraHosts`               | The list of additional hostnames to be covered with this ingress record.                                                         | `[]`                     |
-| `ingress.extraPaths`               | An array with additional arbitrary paths that may need to be added to the ingress under the main host                            | `[]`                     |
-| `ingress.extraRules`               | The list of additional rules to be added to this ingress record. Evaluated as a template                                         | `[]`                     |
-| `ingress.extraTls`                 | The tls configuration for additional hostnames to be covered with this ingress record.                                           | `[]`                     |
-| `ingress.secrets`                  | Custom TLS certificates as secrets                                                                                               | `[]`                     |
+| `service.clusterIP`                | Keycloak service clusterIP IP                                                                                                    | `""`                     |
+| `service.loadBalancerIP`           | loadBalancerIP for the SuiteCRM Service (optional, cloud specific)                                                               | `""`                     |
+| `service.loadBalancerSourceRanges` | Address that are allowed when service is LoadBalancer                                                                            | `[]`                     |
+| `service.externalTrafficPolicy`    | Enable client source IP preservation                                                                                             | `Cluster`                |
+| `service.annotations`              | Additional custom annotations for Keycloak service                                                                               | `{}`                     |
+| `service.extraPorts`               | Extra port to expose on Keycloak service                                                                                         | `[]`                     |
+| `service.extraHeadlessPorts`       | Extra ports to expose on Keycloak headless service                                                                               | `[]`                     |
+| `service.headless.annotations`     | Annotations for the headless service.                                                                                            | `{}`                     |
+| `service.headless.extraPorts`      | Extra ports to expose on Keycloak headless service                                                                               | `[]`                     |
+| `ingress.enabled`                  | Enable ingress record generation for Keycloak                                                                                    | `false`                  |
 | `ingress.ingressClassName`         | IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)                                                    | `""`                     |
-| `ingress.existingSecret`           | It is you own the certificate as secret.                                                                                         | `""`                     |
-| `networkPolicy.enabled`            | Enable creation of NetworkPolicy resources                                                                                       | `false`                  |
+| `ingress.pathType`                 | Ingress path type                                                                                                                | `ImplementationSpecific` |
+| `ingress.apiVersion`               | Force Ingress API version (automatically detected if not set)                                                                    | `""`                     |
+| `ingress.hostname`                 | Default host for the ingress record (evaluated as template)                                                                      | `keycloak.local`         |
+| `ingress.path`                     | Default path for the ingress record (evaluated as template)                                                                      | `""`                     |
+| `ingress.servicePort`              | Backend service port to use                                                                                                      | `http`                   |
+| `ingress.annotations`              | Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations. | `{}`                     |
+| `ingress.tls`                      | Enable TLS configuration for the host defined at `ingress.hostname` parameter                                                    | `false`                  |
+| `ingress.selfSigned`               | Create a TLS secret for this ingress record using self-signed certificates generated by Helm                                     | `false`                  |
+| `ingress.extraHosts`               | An array with additional hostname(s) to be covered with the ingress record                                                       | `[]`                     |
+| `ingress.extraPaths`               | Any additional arbitrary paths that may need to be added to the ingress under the main host.                                     | `[]`                     |
+| `ingress.extraTls`                 | The tls configuration for additional hostnames to be covered with this ingress record.                                           | `[]`                     |
+| `ingress.secrets`                  | If you're providing your own certificates, please use this to add the certificates as secrets                                    | `[]`                     |
+| `ingress.extraRules`               | Additional rules to be covered with this ingress record                                                                          | `[]`                     |
+| `networkPolicy.enabled`            | Enable the default NetworkPolicy policy                                                                                          | `false`                  |
 | `networkPolicy.allowExternal`      | Don't require client label for connections                                                                                       | `true`                   |
-| `networkPolicy.additionalRules`    | Additional NetworkPolicy Ingress "from" rules to set. Note that all rules are OR-ed.                                             | `[]`                     |
+| `networkPolicy.additionalRules`    | Additional NetworkPolicy rules                                                                                                   | `{}`                     |
 
-### Metrics Parameters
+### RBAC parameter
 
-| Name                                       | Description                                                                            | Value                 |
-| ------------------------------------------ | -------------------------------------------------------------------------------------- | --------------------- |
-| `metrics.enabled`                          | Enable exposing RabbitMQ metrics to be gathered by Prometheus                          | `false`               |
-| `metrics.plugins`                          | Plugins to enable Prometheus metrics in RabbitMQ                                       | `rabbitmq_prometheus` |
-| `metrics.podAnnotations`                   | Annotations for enabling prometheus to access the metrics endpoint                     | `{}`                  |
-| `metrics.serviceMonitor.enabled`           | Create ServiceMonitor Resource for scraping metrics using PrometheusOperator           | `false`               |
-| `metrics.serviceMonitor.namespace`         | Specify the namespace in which the serviceMonitor resource will be created             | `""`                  |
-| `metrics.serviceMonitor.interval`          | Specify the interval at which metrics should be scraped                                | `30s`                 |
-| `metrics.serviceMonitor.scrapeTimeout`     | Specify the timeout after which the scrape is ended                                    | `""`                  |
-| `metrics.serviceMonitor.jobLabel`          | The name of the label on the target service to use as the job name in prometheus.      | `""`                  |
-| `metrics.serviceMonitor.relabelings`       | RelabelConfigs to apply to samples before scraping.                                    | `[]`                  |
-| `metrics.serviceMonitor.metricRelabelings` | MetricsRelabelConfigs to apply to samples before ingestion.                            | `[]`                  |
-| `metrics.serviceMonitor.honorLabels`       | honorLabels chooses the metric's labels on collisions with target labels               | `false`               |
-| `metrics.serviceMonitor.targetLabels`      | Used to keep given service's labels in target                                          | `{}`                  |
-| `metrics.serviceMonitor.podTargetLabels`   | Used to keep given pod's labels in target                                              | `{}`                  |
-| `metrics.serviceMonitor.path`              | Define the path used by ServiceMonitor to scrap metrics                                | `""`                  |
-| `metrics.serviceMonitor.selector`          | ServiceMonitor selector labels                                                         | `{}`                  |
-| `metrics.serviceMonitor.labels`            | Extra labels for the ServiceMonitor                                                    | `{}`                  |
-| `metrics.serviceMonitor.annotations`       | Extra annotations for the ServiceMonitor                                               | `{}`                  |
-| `metrics.prometheusRule.enabled`           | Set this to true to create prometheusRules for Prometheus operator                     | `false`               |
-| `metrics.prometheusRule.additionalLabels`  | Additional labels that can be used so prometheusRules will be discovered by Prometheus | `{}`                  |
-| `metrics.prometheusRule.namespace`         | namespace where prometheusRules resource should be created                             | `""`                  |
-| `metrics.prometheusRule.rules`             | List of rules, used as template by Helm.                                               | `[]`                  |
+| Name                                          | Description                                               | Value   |
+| --------------------------------------------- | --------------------------------------------------------- | ------- |
+| `serviceAccount.create`                       | Enable the creation of a ServiceAccount for Keycloak pods | `true`  |
+| `serviceAccount.name`                         | Name of the created ServiceAccount                        | `""`    |
+| `serviceAccount.automountServiceAccountToken` | Auto-mount the service account token in the pod           | `true`  |
+| `serviceAccount.annotations`                  | Additional custom annotations for the ServiceAccount      | `{}`    |
+| `serviceAccount.extraLabels`                  | Additional labels for the ServiceAccount                  | `{}`    |
+| `rbac.create`                                 | Whether to create and use RBAC resources or not           | `false` |
+| `rbac.rules`                                  | Custom RBAC rules                                         | `[]`    |
 
-### Init Container Parameters
+### Other parameters
 
-| Name                                                   | Description                                                                                                                       | Value                   |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `volumePermissions.enabled`                            | Enable init container that changes the owner and group of the persistent volume(s) mountpoint to `runAsUser:fsGroup`              | `false`                 |
-| `volumePermissions.image.registry`                     | Init container volume-permissions image registry                                                                                  | `docker.io`             |
-| `volumePermissions.image.repository`                   | Init container volume-permissions image repository                                                                                | `bitnami/bitnami-shell` |
-| `volumePermissions.image.tag`                          | Init container volume-permissions image tag                                                                                       | `11-debian-11-r111`     |
-| `volumePermissions.image.digest`                       | Init container volume-permissions image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                    |
-| `volumePermissions.image.pullPolicy`                   | Init container volume-permissions image pull policy                                                                               | `IfNotPresent`          |
-| `volumePermissions.image.pullSecrets`                  | Specify docker-registry secret names as an array                                                                                  | `[]`                    |
-| `volumePermissions.resources.limits`                   | Init container volume-permissions resource limits                                                                                 | `{}`                    |
-| `volumePermissions.resources.requests`                 | Init container volume-permissions resource requests                                                                               | `{}`                    |
-| `volumePermissions.containerSecurityContext.runAsUser` | User ID for the init container                                                                                                    | `0`                     |
+| Name                       | Description                                                    | Value   |
+| -------------------------- | -------------------------------------------------------------- | ------- |
+| `pdb.create`               | Enable/disable a Pod Disruption Budget creation                | `false` |
+| `pdb.minAvailable`         | Minimum number/percentage of pods that should remain scheduled | `1`     |
+| `pdb.maxUnavailable`       | Maximum number/percentage of pods that may be made unavailable | `""`    |
+| `autoscaling.enabled`      | Enable autoscaling for Keycloak                                | `false` |
+| `autoscaling.minReplicas`  | Minimum number of Keycloak replicas                            | `1`     |
+| `autoscaling.maxReplicas`  | Maximum number of Keycloak replicas                            | `11`    |
+| `autoscaling.targetCPU`    | Target CPU utilization percentage                              | `""`    |
+| `autoscaling.targetMemory` | Target Memory utilization percentage                           | `""`    |
 
-The above parameters map to the env variables defined in [bitnami/rabbitmq](https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq). For more information please refer to the [bitnami/rabbitmq](https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq) image documentation.
+### Metrics parameters
+
+| Name                                       | Description                                                                                                               | Value   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `metrics.enabled`                          | Enable exposing Keycloak statistics                                                                                       | `false` |
+| `metrics.service.ports.http`               | Metrics service HTTP port                                                                                                 | `8080`  |
+| `metrics.service.annotations`              | Annotations for enabling prometheus to access the metrics endpoints                                                       | `{}`    |
+| `metrics.serviceMonitor.enabled`           | Create ServiceMonitor Resource for scraping metrics using PrometheusOperator                                              | `false` |
+| `metrics.serviceMonitor.port`              | Metrics service HTTP port                                                                                                 | `http`  |
+| `metrics.serviceMonitor.endpoints`         | The endpoint configuration of the ServiceMonitor. Path is mandatory. Interval, timeout and labellings can be overwritten. | `[]`    |
+| `metrics.serviceMonitor.path`              | Metrics service HTTP path. Deprecated: Use @param metrics.serviceMonitor.endpoints instead                                | `""`    |
+| `metrics.serviceMonitor.namespace`         | Namespace which Prometheus is running in                                                                                  | `""`    |
+| `metrics.serviceMonitor.interval`          | Interval at which metrics should be scraped                                                                               | `30s`   |
+| `metrics.serviceMonitor.scrapeTimeout`     | Specify the timeout after which the scrape is ended                                                                       | `""`    |
+| `metrics.serviceMonitor.labels`            | Additional labels that can be used so ServiceMonitor will be discovered by Prometheus                                     | `{}`    |
+| `metrics.serviceMonitor.selector`          | Prometheus instance selector labels                                                                                       | `{}`    |
+| `metrics.serviceMonitor.relabelings`       | RelabelConfigs to apply to samples before scraping                                                                        | `[]`    |
+| `metrics.serviceMonitor.metricRelabelings` | MetricRelabelConfigs to apply to samples before ingestion                                                                 | `[]`    |
+| `metrics.serviceMonitor.honorLabels`       | honorLabels chooses the metric's labels on collisions with target labels                                                  | `false` |
+| `metrics.serviceMonitor.jobLabel`          | The name of the label on the target service to use as the job name in prometheus.                                         | `""`    |
+| `metrics.prometheusRule.enabled`           | Create PrometheusRule Resource for scraping metrics using PrometheusOperator                                              | `false` |
+| `metrics.prometheusRule.namespace`         | Namespace which Prometheus is running in                                                                                  | `""`    |
+| `metrics.prometheusRule.labels`            | Additional labels that can be used so PrometheusRule will be discovered by Prometheus                                     | `{}`    |
+| `metrics.prometheusRule.groups`            | Groups, containing the alert rules.                                                                                       | `[]`    |
+
+### keycloak-config-cli parameters
+
+| Name                                                      | Description                                                                                                                   | Value                         |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `keycloakConfigCli.enabled`                               | Whether to enable keycloak-config-cli job                                                                                     | `false`                       |
+| `keycloakConfigCli.image.registry`                        | keycloak-config-cli container image registry                                                                                  | `docker.io`                   |
+| `keycloakConfigCli.image.repository`                      | keycloak-config-cli container image repository                                                                                | `bitnami/keycloak-config-cli` |
+| `keycloakConfigCli.image.tag`                             | keycloak-config-cli container image tag                                                                                       | `5.6.1-debian-11-r15`         |
+| `keycloakConfigCli.image.digest`                          | keycloak-config-cli container image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                          |
+| `keycloakConfigCli.image.pullPolicy`                      | keycloak-config-cli container image pull policy                                                                               | `IfNotPresent`                |
+| `keycloakConfigCli.image.pullSecrets`                     | keycloak-config-cli container image pull secrets                                                                              | `[]`                          |
+| `keycloakConfigCli.annotations`                           | Annotations for keycloak-config-cli job                                                                                       | `{}`                          |
+| `keycloakConfigCli.command`                               | Command for running the container (set to default if not set). Use array form                                                 | `[]`                          |
+| `keycloakConfigCli.args`                                  | Args for running the container (set to default if not set). Use array form                                                    | `[]`                          |
+| `keycloakConfigCli.hostAliases`                           | Job pod host aliases                                                                                                          | `[]`                          |
+| `keycloakConfigCli.resources.limits`                      | The resources limits for the keycloak-config-cli container                                                                    | `{}`                          |
+| `keycloakConfigCli.resources.requests`                    | The requested resources for the keycloak-config-cli container                                                                 | `{}`                          |
+| `keycloakConfigCli.containerSecurityContext.enabled`      | Enabled keycloak-config-cli containers' Security Context                                                                      | `true`                        |
+| `keycloakConfigCli.containerSecurityContext.runAsUser`    | Set keycloak-config-cli container's Security Context runAsUser                                                                | `1001`                        |
+| `keycloakConfigCli.containerSecurityContext.runAsNonRoot` | Set keycloak-config-cli container's Security Context runAsNonRoot                                                             | `true`                        |
+| `keycloakConfigCli.podSecurityContext.enabled`            | Enabled keycloak-config-cli pods' Security Context                                                                            | `true`                        |
+| `keycloakConfigCli.podSecurityContext.fsGroup`            | Set keycloak-config-cli pod's Security Context fsGroup                                                                        | `1001`                        |
+| `keycloakConfigCli.backoffLimit`                          | Number of retries before considering a Job as failed                                                                          | `1`                           |
+| `keycloakConfigCli.podLabels`                             | Pod extra labels                                                                                                              | `{}`                          |
+| `keycloakConfigCli.podAnnotations`                        | Annotations for job pod                                                                                                       | `{}`                          |
+| `keycloakConfigCli.extraEnvVars`                          | Additional environment variables to set                                                                                       | `[]`                          |
+| `keycloakConfigCli.nodeSelector`                          | Node labels for pod assignment                                                                                                | `{}`                          |
+| `keycloakConfigCli.podTolerations`                        | Tolerations for job pod assignment                                                                                            | `[]`                          |
+| `keycloakConfigCli.extraEnvVarsCM`                        | ConfigMap with extra environment variables                                                                                    | `""`                          |
+| `keycloakConfigCli.extraEnvVarsSecret`                    | Secret with extra environment variables                                                                                       | `""`                          |
+| `keycloakConfigCli.extraVolumes`                          | Extra volumes to add to the job                                                                                               | `[]`                          |
+| `keycloakConfigCli.extraVolumeMounts`                     | Extra volume mounts to add to the container                                                                                   | `[]`                          |
+| `keycloakConfigCli.initContainers`                        | Add additional init containers to the Keycloak config cli pod                                                                 | `[]`                          |
+| `keycloakConfigCli.sidecars`                              | Add additional sidecar containers to the Keycloak config cli pod                                                              | `[]`                          |
+| `keycloakConfigCli.configuration`                         | keycloak-config-cli realms configuration                                                                                      | `{}`                          |
+| `keycloakConfigCli.existingConfigmap`                     | ConfigMap with keycloak-config-cli configuration. This will override `keycloakConfigCli.config`                               | `""`                          |
+| `keycloakConfigCli.cleanupAfterFinished.enabled`          | Enables Cleanup for Finished Jobs                                                                                             | `false`                       |
+| `keycloakConfigCli.cleanupAfterFinished.seconds`          | Sets the value of ttlSecondsAfterFinished                                                                                     | `600`                         |
+
+### Database parameters
+
+| Name                                         | Description                                                                                                       | Value              |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `postgresql.enabled`                         | Switch to enable or disable the PostgreSQL helm chart                                                             | `true`             |
+| `postgresql.auth.postgresPassword`           | Password for the "postgres" admin user. Ignored if `auth.existingSecret` with key `postgres-password` is provided | `""`               |
+| `postgresql.auth.username`                   | Name for a custom user to create                                                                                  | `bn_keycloak`      |
+| `postgresql.auth.password`                   | Password for the custom user to create                                                                            | `""`               |
+| `postgresql.auth.database`                   | Name for a custom database to create                                                                              | `bitnami_keycloak` |
+| `postgresql.auth.existingSecret`             | Name of existing secret to use for PostgreSQL credentials                                                         | `""`               |
+| `postgresql.architecture`                    | PostgreSQL architecture (`standalone` or `replication`)                                                           | `standalone`       |
+| `externalDatabase.host`                      | Database host                                                                                                     | `""`               |
+| `externalDatabase.port`                      | Database port number                                                                                              | `5432`             |
+| `externalDatabase.user`                      | Non-root username for Keycloak                                                                                    | `bn_keycloak`      |
+| `externalDatabase.password`                  | Password for the non-root username for Keycloak                                                                   | `""`               |
+| `externalDatabase.database`                  | Keycloak database name                                                                                            | `bitnami_keycloak` |
+| `externalDatabase.existingSecret`            | Name of an existing secret resource containing the database credentials                                           | `""`               |
+| `externalDatabase.existingSecretPasswordKey` | Name of an existing secret key containing the database credentials                                                | `""`               |
+
+### Keycloak Cache parameters
+
+| Name              | Description                                                                | Value        |
+| ----------------- | -------------------------------------------------------------------------- | ------------ |
+| `cache.enabled`   | Switch to enable or disable the keycloak distributed cache for kubernetes. | `true`       |
+| `cache.stackName` | Set infinispan cache stack to use                                          | `kubernetes` |
+| `cache.stackFile` | Set infinispan cache stack filename to use                                 | `""`         |
+
+### Keycloak Logging parameters
+
+| Name             | Description                                                                    | Value     |
+| ---------------- | ------------------------------------------------------------------------------ | --------- |
+| `logging.output` | Alternates between the default log output format or json format                | `default` |
+| `logging.level`  | Allowed values as documented: FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL, OFF | `INFO`    |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```console
-helm install my-release \
-  --set auth.username=admin,auth.password=secretpassword,auth.erlangCookie=secretcookie \
-    oci://registry-1.docker.io/bitnamicharts/rabbitmq
+helm install my-release --set auth.adminPassword=secretpassword oci://registry-1.docker.io/bitnamicharts/keycloak
 ```
 
-The above command sets the RabbitMQ admin username and password to `admin` and `secretpassword` respectively. Additionally the secure erlang cookie is set to `secretcookie`.
+The above command sets the Keycloak administrator password to `secretpassword`.
 
 > NOTE: Once this chart is deployed, it is not possible to change the application's access credentials, such as usernames or passwords, using Helm. To change these application credentials after deployment, delete any persistent volumes (PVs) used by the chart and re-deploy it, or use the application's built-in administrative tools if available.
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
 
 ```console
-helm install my-release -f values.yaml oci://registry-1.docker.io/bitnamicharts/rabbitmq
+helm install my-release -f values.yaml oci://registry-1.docker.io/bitnamicharts/keycloak
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
+
+Keycloak realms, users and clients can be created from the Keycloak administration panel. Refer to the [tutorial on adding user authentication to applications with Keycloak](https://docs.bitnami.com/tutorials/integrate-keycloak-authentication-kubernetes) for more details on these operations.
 
 ## Configuration and installation details
 
@@ -392,77 +370,28 @@ It is strongly recommended to use immutable tags in a production environment. Th
 
 Bitnami will release a new chart updating its containers if a new version of the main container, significant changes, or critical vulnerabilities exist.
 
-### Set pod affinity
+### Use an external database
 
-This chart allows you to set your custom affinity using the `affinity` parameter. Find more information about Pod's affinity in the [kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).
+Sometimes, you may want to have Keycloak connect to an external PostgreSQL database rather than a database within your cluster - for example, when using a managed database service, or when running a single database server for all your applications. To do this, set the `postgresql.enabled` parameter to `false` and specify the credentials for the external database using the `externalDatabase.*` parameters.
 
-As an alternative, you can use of the preset configurations for pod affinity, pod anti-affinity, and node affinity available at the [bitnami/common](https://github.com/bitnami/charts/tree/main/bitnami/common#affinities) chart. To do so, set the `podAffinityPreset`, `podAntiAffinityPreset`, or `nodeAffinityPreset` parameters.
+Refer to the [chart documentation on using an external database](https://docs.bitnami.com/kubernetes/apps/keycloak/configuration/use-external-database) for more details and an example.
 
-### Scale horizontally
+> NOTE: Only PostgreSQL database server is supported as external database
 
-To horizontally scale this chart once it has been deployed, two options are available:
+It is not supported but possible to run Keycloak with an external MSSQL database with the following settings:
 
-- Use the `kubectl scale` command.
-- Upgrade the chart modifying the `replicaCount` parameter.
-
-> NOTE: It is mandatory to specify the password and Erlang cookie that was set the first time the chart was installed when upgrading the chart.
-
-When scaling down the solution, unnecessary RabbitMQ nodes are automatically stopped, but they are not removed from the cluster. You need to manually remove them by running the `rabbitmqctl forget_cluster_node` command.
-
-Refer to the chart documentation for [more information on scaling the Rabbit cluster horizontally](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/administration/scale-deployment/).
-
-### Enable TLS support
-
-To enable TLS support, first generate the certificates as described in the [RabbitMQ documentation for SSL certificate generation](https://www.rabbitmq.com/ssl.html#automated-certificate-generation).
-
-Once the certificates are generated, you have two alternatives:
-
-- Create a secret with the certificates and associate the secret when deploying the chart
-- Include the certificates in the *values.yaml* file when deploying the chart
-
-Set the *auth.tls.failIfNoPeerCert* parameter to *false* to allow a TLS connection if the client fails to provide a certificate.
-
-Set the *auth.tls.sslOptionsVerify* to *verify_peer* to force a node to perform peer verification. When set to *verify_none*, peer verification will be disabled and certificate exchange won't be performed.
-
-Refer to the chart documentation for [more information and examples of enabling TLS and using Let's Encrypt certificates](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/administration/enable-tls-ingress/).
-
-### Load custom definitions
-
-It is possible to [load a RabbitMQ definitions file to configure RabbitMQ](https://www.rabbitmq.com/management.html#load-definitions).
-
-Because definitions may contain RabbitMQ credentials, [store the JSON as a Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod). Within the secret's data, choose a key name that corresponds with the desired load definitions filename (i.e. `load_definition.json`) and use the JSON object as the value.
-
-Next, specify the `load_definitions` property as an `extraConfiguration` pointing to the load definition file path within the container (i.e. `/app/load_definition.json`) and set `loadDefinition.enable` to `true`. Any load definitions specified will be available within in the container at `/app`.
-
-> NOTE: Loading a definition will take precedence over any configuration done through [Helm values](#parameters).
-
-If needed, you can use `extraSecrets` to let the chart create the secret for you. This way, you don't need to manually create it before deploying a release. These secrets can also be templated to use supplied chart values.
-
-Refer to the chart documentation for [more information and configuration examples of loading custom definitions](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/configuration/load-files/).
-
-### Configure LDAP support
-
-LDAP support can be enabled in the chart by specifying the `ldap.*` parameters while creating a release. Refer to the chart documentation for [more information and a configuration example](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/configuration/configure-ldap/).
-
-### Configure memory high watermark
-
-It is possible to configure a memory high watermark on RabbitMQ to define [memory thresholds](https://www.rabbitmq.com/memory.html#threshold) using the `memoryHighWatermark.*` parameters. To do so, you have two alternatives:
-
-- Set an absolute limit of RAM to be used on each RabbitMQ node, as shown in the configuration example below:
-
-```text
-memoryHighWatermark.enabled="true"
-memoryHighWatermark.type="absolute"
-memoryHighWatermark.value="512MB"
-```
-
-- Set a relative limit of RAM to be used on each RabbitMQ node. To enable this feature,  define the memory limits at pod level too. An example configuration is shown below:
-
-```text
-memoryHighWatermark.enabled="true"
-memoryHighWatermark.type="relative"
-memoryHighWatermark.value="0.4"
-resources.limits.memory="2Gi"
+```yaml
+externalDatabase:
+  host: "mssql.example.com"
+  port: 1433
+  user: keycloak
+  database: keycloak
+  existingSecret: passwords
+extraEnvVars:
+  - name: KC_DB # override values from the conf file
+    value: 'mssql'
+  - name: KC_DB_URL
+    value: 'jdbc:sqlserver://mssql.example.com:1433;databaseName=keycloak;'
 ```
 
 ### Add extra environment variables
@@ -471,110 +400,59 @@ In case you want to add extra environment variables (useful for advanced operati
 
 ```yaml
 extraEnvVars:
-  - name: LOG_LEVEL
-    value: error
+  - name: KEYCLOAK_LOG_LEVEL
+    value: DEBUG
 ```
 
-Alternatively, you can use a ConfigMap or a Secret with the environment variables. To do so, use the `.extraEnvVarsCM` or the `extraEnvVarsSecret` properties.
+Alternatively, you can use a ConfigMap or a Secret with the environment variables. To do so, use the `extraEnvVarsCM` or the `extraEnvVarsSecret` values.
 
-### Use plugins
+### Use Sidecars and Init Containers
 
-The Bitnami Docker RabbitMQ image ships a set of plugins by default. By default, this chart enables `rabbitmq_management` and `rabbitmq_peer_discovery_k8s` since they are required for RabbitMQ to work on K8s.
+If additional containers are needed in the same pod (such as additional metrics or logging exporters), they can be defined using the `sidecars` config parameter. Similarly, extra init containers can be added using the `initContainers` parameter.
 
-To enable extra plugins, set the `extraPlugins` parameter with the list of plugins you want to enable. In addition to this, the `communityPlugins` parameter can be used to specify a list of URLs (separated by spaces) for custom plugins for RabbitMQ.
+Refer to the chart documentation for more information on, and examples of, configuring and using [sidecars and init containers](https://docs.bitnami.com/kubernetes/apps/keycloak/configuration/configure-sidecar-init-containers/).
 
-Refer to the chart documentation for [more information on using RabbitMQ plugins](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/configuration/use-plugins/).
+### Initialize a fresh instance
 
-### Advanced logging
+The [Bitnami Keycloak](https://github.com/bitnami/containers/tree/main/bitnami/keycloak) image allows you to use your custom scripts to initialize a fresh instance. In order to execute the scripts, you can specify custom scripts using the `initdbScripts` parameter as dict.
 
-In case you want to configure RabbitMQ logging set `logs` value to false and set the log config in extraConfiguration following the [official documentation](https://www.rabbitmq.com/logging.html#log-file-location).
+In addition to this option, you can also set an external ConfigMap with all the initialization scripts. This is done by setting the `initdbScriptsConfigMap` parameter. Note that this will override the previous option.
 
-An example:
+The allowed extensions is `.sh`.
 
-```yaml
-logs: false # custom logging
-extraConfiguration: |
-  log.default.level = warning
-  log.file = false
-  log.console = true
-  log.console.level = warning
-  log.console.formatter = json
-```
+### Deploy extra resources
 
-### Recover the cluster from complete shutdown
+There are cases where you may want to deploy extra objects, such a ConfigMap containing your app's configuration or some extra deployment with a micro service used by your app. For covering this case, the chart allows adding the full specification of other objects using the `extraDeploy` parameter.
 
-> IMPORTANT: Some of these procedures can lead to data loss. Always make a backup beforehand.
+### Set Pod affinity
 
-The RabbitMQ cluster is able to support multiple node failures but, in a situation in which all the nodes are brought down at the same time, the cluster might not be able to self-recover.
+This chart allows you to set your custom affinity using the `affinity` parameter. Find more information about Pod's affinity in the [kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).
 
-This happens if the pod management policy of the statefulset is not `Parallel` and the last pod to be running wasn't the first pod of the statefulset. If that happens, update the pod management policy to recover a healthy state:
+As an alternative, you can use of the preset configurations for pod affinity, pod anti-affinity, and node affinity available at the [bitnami/common](https://github.com/bitnami/charts/tree/main/bitnami/common#affinities) chart. To do so, set the `podAffinityPreset`, `podAntiAffinityPreset`, or `nodeAffinityPreset` parameters.
 
-```console
-$ kubectl delete statefulset STATEFULSET_NAME --cascade=false
-helm upgrade RELEASE_NAME oci://registry-1.docker.io/bitnamicharts/rabbitmq \
-    --set podManagementPolicy=Parallel \
-    --set replicaCount=NUMBER_OF_REPLICAS \
-    --set auth.password=PASSWORD \
-    --set auth.erlangCookie=ERLANG_COOKIE
-```
+### Configure Ingress
 
-For a faster resyncronization of the nodes, you can temporarily disable the readiness probe by setting `readinessProbe.enabled=false`. Bear in mind that the pods will be exposed before they are actually ready to process requests.
+This chart provides support for Ingress resources. If you have an ingress controller installed on your cluster, such as [nginx-ingress-controller](https://github.com/bitnami/charts/tree/main/bitnami/nginx-ingress-controller) or [contour](https://github.com/bitnami/charts/tree/main/bitnami/contour) you can utilize the ingress controller to serve your application.
 
-If the steps above don't bring the cluster to a healthy state, it could be possible that none of the RabbitMQ nodes think they were the last node to be up during the shutdown. In those cases, you can force the boot of the nodes by specifying the `clustering.forceBoot=true` parameter (which will execute [`rabbitmqctl force_boot`](https://www.rabbitmq.com/rabbitmqctl.8.html#force_boot) in each pod):
+To enable Ingress integration, set `ingress.enabled` to `true`. The `ingress.hostname` property can be used to set the host name. The `ingress.tls` parameter can be used to add the TLS configuration for this host. It is also possible to have more than one host, with a separate TLS configuration for each host. [Learn more about configuring and using Ingress](https://docs.bitnami.com/kubernetes/apps/keycloak/configuration/configure-ingress/).
 
-```console
-helm upgrade RELEASE_NAME oci://registry-1.docker.io/bitnamicharts/rabbitmq \
-    --set podManagementPolicy=Parallel \
-    --set clustering.forceBoot=true \
-    --set replicaCount=NUMBER_OF_REPLICAS \
-    --set auth.password=PASSWORD \
-    --set auth.erlangCookie=ERLANG_COOKIE
-```
+### Configure TLS Secrets for use with Ingress
 
-More information: [Clustering Guide: Restarting](https://www.rabbitmq.com/clustering.html#restarting).
+The chart also facilitates the creation of TLS secrets for use with the Ingress controller, with different options for certificate management. [Learn more about TLS secrets](https://docs.bitnami.com/kubernetes/apps/keycloak/administration/enable-tls-ingress/).
 
-### Known issues
+### Use with ingress offloading SSL
 
-- Changing the password through RabbitMQ's UI can make the pod fail due to the default liveness probes. If you do so, remember to make the chart aware of the new password. Updating the default secret with the password you set through RabbitMQ's UI will automatically recreate the pods. If you are using your own secret, you may have to manually recreate the pods.
+If your ingress controller has the SSL Termination, you should set `proxy` to `edge`.
 
-## Persistence
+### Manage secrets and passwords
 
-The [Bitnami RabbitMQ](https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq) image stores the RabbitMQ data and configurations at the `/opt/bitnami/rabbitmq/var/lib/rabbitmq/` path of the container.
+This chart provides several ways to manage passwords:
 
-The chart mounts a [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) at this location. By default, the volume is created using dynamic volume provisioning. An existing PersistentVolumeClaim can also be defined.
+- Values passed to the chart
+- An existing secret with all the passwords (via the `existingSecret` parameter)
+- Multiple existing secrets with all the passwords (via the `existingSecretPerPassword` parameter)
 
-### Use existing PersistentVolumeClaims
-
-1. Create the PersistentVolume
-2. Create the PersistentVolumeClaim
-3. Install the chart
-
-```console
-helm install my-release --set persistence.existingClaim=PVC_NAME oci://registry-1.docker.io/bitnamicharts/rabbitmq
-```
-
-### Adjust permissions of the persistence volume mountpoint
-
-As the image runs as non-root by default, it is necessary to adjust the ownership of the persistent volume so that the container can write data into it.
-
-By default, the chart is configured to use Kubernetes Security Context to automatically change the ownership of the volume. However, this feature does not work in all Kubernetes distributions.
-As an alternative, this chart supports using an `initContainer` to change the ownership of the volume before mounting it in the final destination.
-
-You can enable this `initContainer` by setting `volumePermissions.enabled` to `true`.
-
-### Configure the default user/vhost
-
-If you want to create default user/vhost and set the default permission. you can use `extraConfiguration`:
-
-```yaml
-auth:
-  username: default-user
-extraConfiguration: |-
-  default_vhost = default-vhost
-  default_permissions.configure = .*
-  default_permissions.read = .*
-  default_permissions.write = .*
-```
+Refer to the [chart documentation on managing passwords](https://docs.bitnami.com/kubernetes/apps/keycloak/configuration/manage-passwords/) for examples of each method.
 
 ## Troubleshooting
 
@@ -582,133 +460,13 @@ Find more information about how to deal with common errors related to Bitnami's 
 
 ## Upgrading
 
-It's necessary to set the `auth.password` and `auth.erlangCookie` parameters when upgrading for readiness/liveness probes to work properly. When you install this chart for the first time, some notes will be displayed providing the credentials you must use under the 'Credentials' section. Please note down the password and the cookie, and run the command below to upgrade your chart:
+### To 12.0.0
 
-```console
-helm upgrade my-release oci://registry-1.docker.io/bitnamicharts/rabbitmq --set auth.password=[PASSWORD] --set auth.erlangCookie=[RABBITMQ_ERLANG_COOKIE]
-```
+This major updates the PostgreSQL subchart to its newest major, 12.0.0. [Here](https://github.com/bitnami/charts/tree/master/bitnami/postgresql#to-1200) you can find more information about the changes introduced in that version.
 
-| Note: you need to substitute the placeholders [PASSWORD] and [RABBITMQ_ERLANG_COOKIE] with the values obtained in the installation notes.
+### To any previous version
 
-### To 11.0.0
-
-This major version changes the default RabbitMQ image from 3.10.x to 3.11.x. Follow the [official instructions](https://www.rabbitmq.com/upgrade.html) to upgrade from 3.10 to 3.11.
-
-### To 10.0.0
-
-This major version changes the default RabbitMQ image from 3.9.x to 3.10.x. Follow the [official instructions](https://www.rabbitmq.com/upgrade.html) to upgrade from 3.9 to 3.10.
-
-### To 9.0.0
-
-This major release renames several values in this chart and adds missing features, in order to be aligned with the rest of the assets in the Bitnami charts repository.
-
-  .dist
-  .manager
-  .metrics
-  .epmd
-
-- `service.port` has been renamed as `service.ports.amqp`.
-- `service.portName` has been renamed as `service.portNames.amqp`.
-- `service.nodePort`has been renamed as `service.nodePorts.amqp`.
-- `service.tlsPort` has been renamed as `service.ports.amqpTls`.
-- `service.tlsPortName` has been renamed as `service.portNames.amqpTls`.
-- `service.tlsNodePort` has been renamed as `service.nodePorts.amqpTls`.
-- `service.epmdPortName` has been renamed as `service.portNames.epmd`.
-- `service.epmdNodePort` has been renamed as `service.nodePorts.epmd`.
-- `service.distPort` has been renamed as `service.ports.dist`.
-- `service.distPortName` has been renamed as `service.portNames.dist`.
-- `service.distNodePort` has been renamed as `service.nodePorts.dist`.
-- `service.managerPort` has been renamed as `service.ports.manager`.
-- `service.managerPortName` has been renamed as `service.portNames.manager`.
-- `service.managerNodePort` has been renamed as `service.nodePorts.manager`.
-- `service.metricsPort` has been renamed as `service.ports.metrics`.
-- `service.metricsPortName` has been renamed as `service.portNames.metrics`.
-- `service.metricsNodePort` has been renamed as `service.nodePorts.metrics`.
-- `persistence.volumes` has been removed, as it duplicates the parameter `extraVolumes`.
-- `ingress.certManager` has been removed.
-- `metrics.serviceMonitor.relabellings` has been replaced with `metrics.serviceMonitor.relabelings`, and it sets the field `relabelings` instead of `metricRelabelings`.
-- `metrics.serviceMonitor.additionalLabels` has been renamed as `metrics.serviceMonitor.labels`
-- `updateStrategyType` has been removed, use the field `updateStrategy` instead, which is interpreted as a template.
-- The content of `podSecurityContext` and `containerSecurityContext` have been modified.
-- The behavior of VolumePermissions has been modified to not change ownership of '.snapshot' and 'lost+found'
-- Introduced the values `ContainerPorts.*`, separating the service and container ports configuration.
-
-### To 8.21.0
-
-This new version of the chart bumps the RabbitMQ version to `3.9.1`. It is considered a minor release, and no breaking changes are expected. Additionally, RabbitMQ `3.9.X` nodes can run alongside `3.8.X` nodes.
-
-See the [Upgrading guide](https://www.rabbitmq.com/upgrade.html) and the [RabbitMQ change log](https://www.rabbitmq.com/changelog.html) for further documentation.
-
-### To 8.0.0
-
-[On November 13, 2020, Helm v2 support was formally finished](https://github.com/helm/charts#status-of-the-project), this major version is the result of the required changes applied to the Helm Chart to be able to incorporate the different features added in Helm v3 and to be consistent with the Helm project itself regarding the Helm v2 EOL.
-
-[Learn more about this change and related upgrade considerations](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/administration/upgrade-helm3/).
-
-### To 7.0.0
-
-- Several parameters were renamed or disappeared in favor of new ones on this major version:
-  - `replicas` is renamed to `replicaCount`.
-  - `securityContext.*` is deprecated in favor of `podSecurityContext` and `containerSecurityContext`.
-  - Authentication parameters were reorganized under the `auth.*` parameter:
-    - `rabbitmq.username`, `rabbitmq.password`, and `rabbitmq.erlangCookie` are now `auth.username`, `auth.password`, and `auth.erlangCookie` respectively.
-    - `rabbitmq.tls.*` parameters are now under `auth.tls.*`.
-  - Parameters prefixed with `rabbitmq.` were renamed removing the prefix. E.g. `rabbitmq.configuration` -> renamed to `configuration`.
-  - `rabbitmq.rabbitmqClusterNodeName` is deprecated.
-  - `rabbitmq.setUlimitNofiles` is deprecated.
-  - `forceBoot.enabled` is renamed to `clustering.forceBoot`.
-  - `loadDefinition.secretName` is renamed to `loadDefinition.existingSecret`.
-  - `metics.port` is remamed to `service.metricsPort`.
-  - `service.extraContainerPorts` is renamed to `extraContainerPorts`.
-  - `service.nodeTlsPort` is renamed to `service.tlsNodePort`.
-  - `podDisruptionBudget` is deprecated in favor of `pdb.create`, `pdb.minAvailable`, and `pdb.maxUnavailable`.
-  - `rbacEnabled` -> deprecated in favor of `rbac.create`.
-  - New parameters: `serviceAccount.create`, and `serviceAccount.name`.
-  - New parameters: `memoryHighWatermark.enabled`, `memoryHighWatermark.type`, and `memoryHighWatermark.value`.
-- Chart labels and Ingress configuration were adapted to follow the Helm charts best practices.
-- Initialization logic now relies on the container.
-- This version introduces `bitnami/common`, a [library chart](https://helm.sh/docs/topics/library_charts/#helm) as a dependency. More documentation about this new utility could be found [here](https://github.com/bitnami/charts/tree/main/bitnami/common#bitnami-common-library-chart). Please, make sure that you have updated the chart dependencies before executing any upgrade.
-- The layout of the persistent volumes has changed (if using persistence). Action is required if preserving data through the upgrade is desired:
-  - The data has moved from `mnesia/` within the persistent volume to the root of the persistent volume
-  - The `config/` and `schema/` directories within the persistent volume are no longer used
-  - An init container can be used to move and clean up the peristent volumes. An example can be found [here](https://github.com/bitnami/charts/issues/10913#issuecomment-1169619513).
-  - Alternately the value `persistence.subPath` can be overridden to be `mnesia` so that the directory layout is consistent with what it was previously.
-    - Note however that this will leave the unused `config/` and `schema/` directories within the peristent volume forever.
-
-Consequences:
-
-- Backwards compatibility is not guaranteed.
-- Compatibility with non Bitnami images is not guaranteed anymore.
-
-### To 6.0.0
-
-This new version updates the RabbitMQ image to a [new version based on bash instead of node.js](https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq#3715-r18-3715-ol-7-r19). However, since this Chart overwrites the container's command, the changes to the container shouldn't affect the Chart. To upgrade, it may be needed to enable the `fastBoot` option, as it is already the case from upgrading from 5.X to 5.Y.
-
-### To 5.0.0
-
-This major release changes the clustering method from `ip` to `hostname`.
-This change is needed to fix the persistence. The data dir will now depend on the hostname which is stable instead of the pod IP that might change.
-
-> IMPORTANT: Note that if you upgrade from a previous version you will lose your data.
-
-### To 3.0.0
-
-Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
-Use the workaround below to upgrade from versions previous to 3.0.0. The following example assumes that the release name is rabbitmq:
-
-```console
-kubectl delete statefulset rabbitmq --cascade=false
-```
-
-## Bitnami Kubernetes Documentation
-
-Bitnami Kubernetes documentation is available at [https://docs.bitnami.com/](https://docs.bitnami.com/). You can find there the following resources:
-
-- [Documentation for RabbitMQ Helm chart](https://docs.bitnami.com/kubernetes/infrastructure/rabbitmq/)
-- [Get Started with Kubernetes guides](https://docs.bitnami.com/kubernetes/)
-- [Bitnami Helm charts documentation](https://docs.bitnami.com/kubernetes/apps/)
-- [Kubernetes FAQs](https://docs.bitnami.com/kubernetes/faq/)
-- [Kubernetes Developer guides](https://docs.bitnami.com/tutorials/)
+Refer to the [chart documentation for more information about how to upgrade from previous releases](https://docs.bitnami.com/kubernetes/apps/keycloak/administration/upgrade/).
 
 ## License
 

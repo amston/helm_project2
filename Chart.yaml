@@ -1,27 +1,31 @@
 annotations:
-  category: Infrastructure
+  category: DeveloperTools
   licenses: Apache-2.0
 apiVersion: v2
-appVersion: 3.11.15
+appVersion: 21.1.1
 dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 12.x.x
 - name: common
   repository: oci://registry-1.docker.io/bitnamicharts
   tags:
   - bitnami-common
   version: 2.x.x
-description: RabbitMQ is an open source general-purpose message broker that is designed
-  for consistent, highly-available messaging scenarios (both synchronous and asynchronous).
-home: https://github.com/bitnami/charts/tree/main/bitnami/rabbitmq
-icon: https://bitnami.com/assets/stacks/rabbitmq/img/rabbitmq-stack-220x234.png
+description: Keycloak is a high performance Java-based identity and access management
+  solution. It lets developers add an authentication layer to their applications with
+  minimum effort.
+home: https://www.keycloak.org
+icon: https://bitnami.com/assets/stacks/keycloak/img/keycloak-stack-220x234.png
 keywords:
-- rabbitmq
-- message queue
-- AMQP
+- keycloak
+- access-management
 maintainers:
 - name: Bitnami
   url: https://github.com/bitnami/charts
-name: rabbitmq
+name: keycloak
 sources:
-- https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq
-- https://www.rabbitmq.com
-version: 11.14.4
+- https://github.com/bitnami/containers/tree/main/bitnami/keycloak
+- https://github.com/keycloak/keycloak
+version: 14.5.0

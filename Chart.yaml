@@ -1,28 +1,27 @@
 annotations:
-  artifacthub.io/changes: |-
-    - "Add priorityClassName to pod spec (#557)"
-    - "Add hostAliases for all DC products (#556)"
-    - "Update appVersions for DC apps (#558)"
-  artifacthub.io/containsSecurityUpdates: "false"
+  category: Infrastructure
+  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 8.9.0
+appVersion: 3.11.15
 dependencies:
 - name: common
-  repository: https://atlassian.github.io/data-center-helm-charts
-  version: 1.0.0
-description: A chart for installing Bitbucket Data Center on Kubernetes
-home: https://atlassian.github.io/data-center-helm-charts/
-icon: https://atlassian.github.io/data-center-helm-charts/icons/bitbucket.svg
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: RabbitMQ is an open source general-purpose message broker that is designed
+  for consistent, highly-available messaging scenarios (both synchronous and asynchronous).
+home: https://github.com/bitnami/charts/tree/main/bitnami/rabbitmq
+icon: https://bitnami.com/assets/stacks/rabbitmq/img/rabbitmq-stack-220x234.png
 keywords:
-- Bitbucket
-- Bitbucket Server
-- Bitbucket Data Center
-- Bitbucket DC
-- Atlassian
-kubeVersion: '>=1.21.x-0'
-name: bitbucket
+- rabbitmq
+- message queue
+- AMQP
+maintainers:
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: rabbitmq
 sources:
-- https://github.com/atlassian/data-center-helm-charts
-- https://bitbucket.org/atlassian-docker/docker-atlassian-bitbucket-server/
-type: application
-version: 1.12.0
+- https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq
+- https://www.rabbitmq.com
+version: 11.14.4

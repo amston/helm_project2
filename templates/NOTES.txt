@@ -1,82 +1,154 @@
-Thank you for installing {{ title .Chart.Name }}.
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
 
-Your release is named {{ .Release.Name }}, and resides in namespace {{ .Release.Namespace }}.
+{{- $servicePort := or (.Values.service.portEnabled) (not .Values.auth.tls.enabled) | ternary .Values.service.ports.amqp .Values.service.ports.amqpTls -}}
 
-Please run sanity tests against the release to verify it's healthy:
+** Please be patient while the chart is being deployed **
 
-  $ helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+{{- if .Values.diagnosticMode.enabled }}
+The chart has been deployed in diagnostic mode. All probes have been disabled and the command has been overwritten with:
 
-If the Kubernetes resources in the release are still starting up, then the tests may fail, so it
-is advisable to wait for the tests to pass before continuing.
+  command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 4 }}
+  args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 4 }}
 
-To see the custom values you used for this release:
+Get the list of pods by executing:
 
-  $ helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
+  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
 
-{{ if .Values.ingress.create -}}
-{{ title .Chart.Name }} service URL: {{ ternary "https" "http" .Values.ingress.https -}}://{{ .Values.ingress.host }}{{ include "bitbucket.ingressPath" . }}
+Access the pod you want to debug by executing
+
+  kubectl exec --namespace {{ .Release.Namespace }} -ti <NAME OF THE POD> -- bash
+
+In order to replicate the container startup scripts execute this command:
+
+    /opt/bitnami/scripts/rabbitmq/entrypoint.sh /opt/bitnami/scripts/rabbitmq/run.sh
+
 {{- else }}
-Get the {{ title .Chart.Name }} URL by running these commands in the same shell:
-{{- if contains "NodePort" .Values.bitbucket.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ .Release.Name }}-{{ .Chart.Name }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.bitbucket.service.type }}
-  NOTE: It may take a few minutes for the LoadBalancer hostname to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ .Release.Name }}-{{ .Chart.Name }}'
 
-  export SERVICE_HOSTNAME=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ .Release.Name }}-{{ .Chart.Name }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-  echo http://$SERVICE_HOSTNAME:{{ .Values.bitbucket.service.port }}
-{{- else if contains "ClusterIP" .Values.bitbucket.service.type }}
-  Step 1: Get the pod name
-    $ export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  Step 2 (Optional): Check if the pod name has been exported successfully and the pod status
-    $ echo POD_NAME: $POD_NAME && echo POD_STATUS: $(kubectl get pod $POD_NAME -o jsonpath='{.status.phase}')
-  Step 3: Wait for pods up and running, then forward pod port to localhost
-    $ kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.bitbucket.ports.http }}
-  Step 4: Access {{ title .Chart.Name }} on localhost:
-    http://localhost:{{ .Values.bitbucket.ports.http }}
+Credentials:
+
+{{- if not .Values.loadDefinition.enabled }}
+    echo "Username      : {{ .Values.auth.username }}"
+    echo "Password      : $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "rabbitmq.secretPasswordName" . }} -o jsonpath="{.data.rabbitmq-password}" | base64 -d)"
 {{- end }}
-{{- end }}
-{{- if not ( or .Values.volumes.localHome.persistentVolumeClaim.create .Values.volumes.localHome.customVolume ) }}
+    echo "ErLang Cookie : $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "rabbitmq.secretErlangName" . }} -o jsonpath="{.data.rabbitmq-erlang-cookie}" | base64 -d)"
 
-#################################################################################
-#####       WARNING: Persistent volume is not used for Local Home!!!        #####
-#####             Data will be lost when the pod is terminated.             #####
-#################################################################################
-{{- end }}
-{{/* Mirrors don't need a shared home - only show warning if clustering is enabled and no shared home volume is created */}}
-{{/* the default can be removed in v2.0.0 */}}
-{{- if and ( not ( or .Values.volumes.sharedHome.persistentVolumeClaim.create .Values.volumes.sharedHome.customVolume)) ( and .Values.bitbucket.clustering.enabled ( eq (default "" .Values.bitbucket.applicationMode) "default")) }}
+Note that the credentials are saved in persistent volume claims and will not be changed upon upgrade or reinstallation unless the persistent volume claim has been deleted. If this is not the first installation of this chart, the credentials may not be valid.
+This is applicable when no passwords are set and therefore the random password is autogenerated. In case of using a fixed password, you should specify it when upgrading.
+More information about the credentials may be found at https://docs.bitnami.com/general/how-to/troubleshoot-helm-chart-issues/#credential-errors-while-upgrading-chart-releases.
 
-#################################################################################
-#####  WARNING: Clustering is enabled but Shared Home is not configured!!!  #####
-#####            Nodes will not be able to form a cluster.                  #####
-#################################################################################
-{{- end }}
-{{- if ( or .Values.bitbucket.securityContext.enabled .Values.bitbucket.securityContext.gid ) }}
+RabbitMQ can be accessed within the cluster on port {{ $servicePort }} at {{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
 
-#################################################################################
-######     DEPRECATION WARNING: bitbucket.securityContext deprecation       #####
-######   Update your values to the new bitbucket.securityContext format     #####
-#################################################################################
-{{- end}}
+To access for outside the cluster, perform the following steps:
 
-{{- if and (.Values.bitbucket.mesh.enabled) (not .Values.bitbucket.mesh.nodeAutoRegistration)}}
+{{- if .Values.ingress.enabled }}
+{{- if contains "NodePort" .Values.service.type }}
 
-Bitbucket Mesh deployed. You can register Mesh nodes at {{ if .Values.ingress.create }}{{ ternary "https" "http" .Values.ingress.https -}}://{{ .Values.ingress.host }}{{ include "bitbucket.ingressPath" . }}{{ else }}${BITBUCKET_URL}{{ end }}/admin/git/mesh using the following URLs:
+To Access the RabbitMQ AMQP port:
 
-{{- range $index := until (.Values.bitbucket.mesh.replicaCount | int) }}
-{{- with $ }}
-  * http://{{ include "common.names.fullname" . }}-mesh-{{ $index }}:{{ .Values.bitbucket.mesh.service.port }}
-{{- end }}
+1. Obtain the NodePort IP and ports:
+
+    export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+    export NODE_PORT_AMQP=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[?(@.name=='amqp')].nodePort}" services {{ include "common.names.fullname" . }})
+    echo "URL : amqp://$NODE_IP:$NODE_PORT_AMQP/"
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+To Access the RabbitMQ AMQP port:
+
+1. Obtain the LoadBalancer IP:
+
+NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+      Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
+
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+    echo "URL : amqp://$SERVICE_IP:{{ $servicePort }}/"
+
+{{- else if contains "ClusterIP"  .Values.service.type }}
+
+To Access the RabbitMQ AMQP port:
+
+1. Create a port-forward to the AMQP port:
+
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ $servicePort }}:{{ $servicePort }} &
+    echo "URL : amqp://127.0.0.1:{{ $servicePort }}/"
+
 {{- end }}
 
-{{ if eq .Values.bitbucket.mesh.service.type "LoadBalancer" }}
-You may use LoadBalancer URLs to register Mesh nodes with Bitbucket server. Get LoadBalancer hostnames:
+2. Access RabbitMQ using using the obtained URL.
 
-  $ for service in {0..2}; do kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }}-mesh-$service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}; done
+To Access the RabbitMQ Management interface:
+
+1. Get the RabbitMQ Management URL and associate its hostname to your cluster external IP:
+
+   export CLUSTER_IP=$(minikube ip) # On Minikube. Use: `kubectl cluster-info` on others K8s clusters
+   echo "RabbitMQ Management: http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}/"
+   echo "$CLUSTER_IP  {{ .Values.ingress.hostname }}" | sudo tee -a /etc/hosts
+
+2. Open a browser and access RabbitMQ Management using the obtained URL.
+
+{{- else }}
+{{- if contains "NodePort" .Values.service.type }}
+
+Obtain the NodePort IP and ports:
+
+    export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+    export NODE_PORT_AMQP=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[?(@.name=='amqp')].nodePort}" services {{ include "common.names.fullname" . }})
+    export NODE_PORT_STATS=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[?(@.name=='http-stats')].nodePort}" services {{ include "common.names.fullname" . }})
+
+To Access the RabbitMQ AMQP port:
+
+    echo "URL : amqp://$NODE_IP:$NODE_PORT_AMQP/"
+
+To Access the RabbitMQ Management interface:
+
+    echo "URL : http://$NODE_IP:$NODE_PORT_STATS/"
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+Obtain the LoadBalancer IP:
+
+NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+      Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
+
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+
+To Access the RabbitMQ AMQP port:
+
+    echo "URL : amqp://$SERVICE_IP:{{ $servicePort }}/"
+
+To Access the RabbitMQ Management interface:
+
+    echo "URL : http://$SERVICE_IP:{{ .Values.service.ports.manager }}/"
+
+{{- else if contains "ClusterIP"  .Values.service.type }}
+
+To Access the RabbitMQ AMQP port:
+
+    echo "URL : amqp://127.0.0.1:{{ $servicePort }}/"
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ $servicePort }}:{{ $servicePort }}
+
+To Access the RabbitMQ Management interface:
+
+    echo "URL : http://127.0.0.1:{{ .Values.service.ports.manager }}/"
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ .Values.service.ports.manager }}:{{ .Values.service.ports.manager }}
+
 {{- end }}
 {{- end }}
 
-For further documentation, see https://atlassian.github.io/data-center-helm-charts/
+{{- if .Values.metrics.enabled }}
+
+To access the RabbitMQ Prometheus metrics, get the RabbitMQ Prometheus URL by running:
+
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ .Values.service.ports.metrics }}:{{ .Values.service.ports.metrics }} &
+    echo "Prometheus Metrics URL: http://127.0.0.1:{{ .Values.service.ports.metrics }}/metrics"
+
+Then, open the obtained URL in a browser.
+
+{{- end }}
+
+{{- include "common.warnings.rollingTag" .Values.image }}
+{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
+
+{{- end }}

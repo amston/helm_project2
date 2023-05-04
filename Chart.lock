@@ -1,9 +1,6 @@
 dependencies:
-- name: postgresql
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 12.4.2
 - name: common
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 2.2.4
-digest: sha256:53b455b401bc8316d433c57565499c4c96bf2db0e189acf6d82e36e7154da51c
-generated: "2023-04-30T00:00:30.183044041Z"
+  repository: https://atlassian.github.io/data-center-helm-charts
+  version: 1.0.0
+digest: sha256:c8b339c129638e1384bb8c9c25df2d9f36decf8a8781b968546766507b5953dc
+generated: "2021-12-17T12:41:08.852897Z"

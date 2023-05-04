@@ -1,259 +1,228 @@
-apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
+{{/* This describes a k8s StatefulSet for deploying Bitbucket for testing */}}
+{{/* the default can be removed in v2.0.0 */}}
+{{- $mirror := default dict .Values.bitbucket.mirror }}
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "common.names.fullname" . }}
-  namespace: {{ include "common.names.namespace" . | quote }}
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    app.kubernetes.io/component: keycloak
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
-  {{- if .Values.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
-  {{- end }}
+  name: {{ include "common.names.fullname" . }}
+  labels:
+    {{- include "common.labels.commonLabels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
-  podManagementPolicy: {{ .Values.podManagementPolicy }}
-  serviceName: {{ printf "%s-headless" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" }}
   updateStrategy:
-    {{- include "common.tplvalues.render" (dict "value" .Values.updateStrategy "context" $ ) | nindent 4 }}
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  podManagementPolicy: {{ default "OrderedReady" .Values.bitbucket.podManagementStrategy }}
+  serviceName: {{ include "common.names.fullname" . }}
   selector:
-    matchLabels: {{ include "common.labels.matchLabels" . | nindent 6 }}
-      app.kubernetes.io/component: keycloak
+    matchLabels:
+      {{- include "common.labels.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        checksum/configmap-env-vars: {{ include (print $.Template.BasePath "/configmap-env-vars.yaml") . | sha256sum }}
-        {{- if not .Values.auth.existingSecret  }}
-        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/config-jvm: {{ include (print $.Template.BasePath "/config-jvm.yaml") . | sha256sum }}
+        {{- if .Values.fluentd.enabled }}
+        checksum/config-fluentd: {{ include (print $.Template.BasePath "/configmap-fluentd.yaml") . | sha256sum }}
         {{- end }}
-        {{- if (include "keycloak.createConfigmap" .) }}
-        checksum/configuration: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- end }}
-        {{- if .Values.podAnnotations }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
-        {{- end }}
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
-        app.kubernetes.io/component: keycloak
-        {{- if .Values.podLabels }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
-        {{- end }}
+        {{- include "bitbucket.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "common.labels.selectorLabels" . | nindent 8 }}
+        {{- include "bitbucket.podLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ template "keycloak.serviceAccountName" . }}
-      {{- include "keycloak.imagePullSecrets" . | nindent 6 }}
-      {{- if .Values.hostAliases }}
-      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      serviceAccountName: {{ include "bitbucket.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.bitbucket.shutdown.terminationGracePeriodSeconds }}
+      hostAliases:
+        {{- include "bitbucket.additionalHosts" . | nindent 8 }}
+      {{- if .Values.bitbucket.securityContextEnabled }}
+      {{- with .Values.bitbucket.securityContext }}
+      securityContext:
+        {{/* this condition is to be removed in v2.0.0 */}}
+        {{- if and .enabled .gid }}
+        fsGroup: {{ .gid }}
+        {{- else }}
+        {{ toYaml . | nindent 8 }}
+        {{- if not .fsGroup }}
+        fsGroup: 2003
+        {{- end }}
+        {{- end }}
       {{- end }}
-      {{- if .Values.affinity }}
-      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.affinity "context" $) | nindent 8 }}
-      {{- else }}
-      affinity:
-        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "context" $) | nindent 10 }}
-        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "context" $) | nindent 10 }}
-        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
-      {{- end }}
-      {{- if .Values.nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
-      {{- end }}
-      {{- if .Values.tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" .) | nindent 8 }}
-      {{- end }}
-      {{- if .Values.topologySpreadConstraints }}
-      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" .) | nindent 8 }}
-      {{- end }}
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName | quote }}
-      {{- end }}
-      {{- if .Values.schedulerName }}
-      schedulerName: {{ .Values.schedulerName }}
-      {{- end }}
-      {{- if .Values.podSecurityContext.enabled }}
-      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
-      {{- end }}
-      {{- if semverCompare ">= 1.13" (include "common.capabilities.kubeVersion" .) }}
-      enableServiceLinks: {{ .Values.enableServiceLinks }}
-      {{- end }}
-      {{- if .Values.terminationGracePeriodSeconds }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- end }}
       initContainers:
-        {{- if .Values.initContainers }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- include "bitbucket.additionalInitContainers" . | nindent 8 }}
+        {{- if and .Values.volumes.sharedHome.nfsPermissionFixer.enabled (or .Values.volumes.sharedHome.persistentVolumeClaim.create .Values.volumes.sharedHome.customVolume) }}
+        - name: nfs-permission-fixer
+          image: {{ .Values.volumes.sharedHome.nfsPermissionFixer.imageRepo }}:{{ .Values.volumes.sharedHome.nfsPermissionFixer.imageTag }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0 # make sure we run as root so we get the ability to change the volume permissions
+          volumeMounts:
+            - name: shared-home
+              mountPath: {{ .Values.volumes.sharedHome.nfsPermissionFixer.mountPath | quote }}
+              {{- if .Values.volumes.sharedHome.subPath }}
+              subPath: {{ .Values.volumes.sharedHome.subPath | quote }}
+              {{- end }}
+          command: ["sh", "-c", {{ include "sharedHome.permissionFix.command" . | quote }}]
         {{- end }}
       containers:
-        - name: keycloak
-          image: {{ template "keycloak.image" . }}
+        - name: {{ .Chart.Name }}
+          image: {{ include "bitbucket.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.lifecycleHooks }}
-          lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
-          {{- end }}
-          {{- if .Values.containerSecurityContext.enabled }}
-          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
-          {{- end }}
-          {{- if .Values.diagnosticMode.enabled }}
-          command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 12 }}
-          {{- else if .Values.command }}
-          command: {{- include "common.tplvalues.render" (dict "value" .Values.command "context" $) | nindent 12 }}
-          {{- end }}
-          {{- if .Values.diagnosticMode.enabled }}
-          args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 12 }}
-          {{- else if .Values.args }}
-          args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
-          {{- end }}
-          env:
-            - name: KUBERNETES_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-            - name: BITNAMI_DEBUG
-              value: {{ ternary "true" "false" .Values.image.debug | quote }}
-            - name: KEYCLOAK_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "keycloak.secretName" . }}
-                  key: {{ include "keycloak.secretKey" . }}
-            - name: KEYCLOAK_DATABASE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "keycloak.databaseSecretName" . }}
-                  key: {{ include "keycloak.databaseSecretKey" . }}
-            {{- if and .Values.tls.enabled (or .Values.tls.keystorePassword .Values.tls.passwordsSecret) }}
-            - name: KEYCLOAK_HTTPS_KEY_STORE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "keycloak.tlsPasswordsSecretName" . }}
-                  key: "tls-keystore-password"
-            {{- end }}
-            {{- if and .Values.tls.enabled (or .Values.tls.truststorePassword .Values.tls.passwordsSecret) }}
-            - name: KEYCLOAK_HTTPS_TRUST_STORE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "keycloak.tlsPasswordsSecretName" . }}
-                  key: "tls-truststore-password"
-            {{- end }}
-            {{- if and .Values.spi.existingSecret (or .Values.spi.truststorePassword .Values.spi.passwordsSecret) }}
-            - name: KEYCLOAK_SPI_TRUSTSTORE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "keycloak.spiPasswordsSecretName" . }}
-                  key: "spi-truststore-password"
-            {{- end }}
-            - name: KEYCLOAK_HTTP_RELATIVE_PATH
-              value: {{ .Values.httpRelativePath | quote }}
-            {{- if .Values.extraStartupArgs }}
-            - name: KEYCLOAK_EXTRA_ARGS
-              value: {{ .Values.extraStartupArgs | quote }}
-            {{- end }}
-            {{- if .Values.extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
-          envFrom:
-            - configMapRef:
-                name: {{ printf "%s-env-vars" (include "common.names.fullname" .) }}
-            {{- if .Values.extraEnvVarsCM }}
-            - configMapRef:
-                name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsCM "context" $) }}
-            {{- end }}
-            {{- if .Values.extraEnvVarsSecret }}
-            - secretRef:
-                name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
-            {{- end }}
-          {{- if .Values.resources }}
-          resources: {{- toYaml .Values.resources | nindent 12 }}
-          {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.containerPorts.http }}
+              containerPort: {{ .Values.bitbucket.ports.http }}
               protocol: TCP
-            {{- if .Values.tls.enabled }}
-            - name: https
-              containerPort: {{ .Values.containerPorts.https }}
+            - name: ssh
+              containerPort: {{ .Values.bitbucket.ports.ssh }}
               protocol: TCP
-            {{- end }}
-            - name: infinispan
-              containerPort: {{ .Values.containerPorts.infinispan }}
+            - name: hazelcast
+              containerPort: {{ .Values.bitbucket.ports.hazelcast }}
               protocol: TCP
-            {{- if .Values.extraContainerPorts }}
-            {{- include "common.tplvalues.render" (dict "value" .Values.extraContainerPorts "context" $) | nindent 12 }}
-            {{- end }}
-          {{- if not .Values.diagnosticMode.enabled }}
-          {{- if .Values.customStartupProbe }}
-          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
-          {{- else if .Values.startupProbe.enabled }}
-          startupProbe: {{- omit .Values.startupProbe "enabled" | toYaml | nindent 12 }}
+            {{- include "bitbucket.additionalPorts" . | nindent 12 }}
+          readinessProbe:
             httpGet:
-              path: {{ .Values.httpRelativePath }}
-              port: http
-          {{- end }}
-          {{- if .Values.customLivenessProbe }}
-          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
-          {{- else if .Values.livenessProbe.enabled }}
-          livenessProbe: {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
-            httpGet:
-              path: {{ .Values.httpRelativePath }}
-              port: http
-          {{- end }}
-          {{- if .Values.customReadinessProbe }}
-          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
-          {{- else if .Values.readinessProbe.enabled }}
-          readinessProbe: {{- omit .Values.readinessProbe "enabled" | toYaml | nindent 12 }}
-            httpGet:
-              path: {{ .Values.httpRelativePath }}realms/master
-              port: http
-          {{- end }}
-          {{- end }}
+              port: {{ .Values.bitbucket.ports.http }}
+              path: {{ .Values.bitbucket.service.contextPath }}/status
+            periodSeconds: 5
+            failureThreshold: 60
+            initialDelaySeconds: 10
+          {{- with .Values.bitbucket.containerSecurityContext}}
+          securityContext:
+            {{- toYaml . | nindent 12}}
+          {{- end}}
           volumeMounts:
-            {{- if or .Values.configuration .Values.existingConfigmap }}
-            - name: keycloak-config
-              mountPath: /bitnami/keycloak/conf/keycloak.conf
-              subPath: keycloak.conf
+            - name: local-home
+              mountPath: {{ .Values.volumes.localHome.mountPath | quote }}
+            {{- if or .Values.volumes.sharedHome.persistentVolumeClaim.create .Values.volumes.sharedHome.customVolume }}
+            - name: shared-home
+              mountPath: {{ .Values.volumes.sharedHome.mountPath | quote }}
+              {{- if .Values.volumes.sharedHome.subPath }}
+              subPath: {{ .Values.volumes.sharedHome.subPath | quote }}
+              {{- end }}
             {{- end }}
-            {{- if .Values.tls.enabled }}
-            - name: certificates
-              mountPath: /opt/bitnami/keycloak/certs
-              readOnly: true
+            {{- include "bitbucket.additionalVolumeMounts" . | nindent 12 }}
+            {{- include "bitbucket.additionalLibraries" . | nindent 12 }}
+            {{- include "bitbucket.additionalBundledPlugins" . | nindent 12 }}
+            {{- range $i, $n := .Values.additionalFiles }}
+            - name: {{ .name }}-{{$i}}
+              mountPath: {{ .mountPath }}/{{ .key }}
+              subPath: {{ .key }}
+            {{ end }}
+          {{- with .Values.bitbucket.resources.container }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: KUBE_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JAVA_OPTS
+              value: "-Dcluster.node.name=$(KUBE_POD_NAME)"
+            {{- include "bitbucket.clusteringEnvVars" . | nindent 12 }}
+            {{- include "bitbucket.databaseEnvVars" . | nindent 12 }}
+            {{- include "bitbucket.sysadminEnvVars" . | nindent 12 }}
+            {{- include "bitbucket.elasticSearchEnvVars" . | nindent 12 }}
+            {{ if .Values.ingress.host }}
+            - name: SERVER_PROXY_NAME
+              value: {{ .Values.ingress.host | quote }}
+            - name: SERVER_PROXY_PORT
+              value: {{ include "bitbucket.ingressPort" . | quote }}
+            - name: SETUP_BASEURL
+              value: {{ include "bitbucket.baseUrl" . | quote }}
+            {{- with .Values.bitbucket.displayName }}
+            - name: SETUP_DISPLAYNAME
+              value: {{ . | quote }}
             {{- end }}
-            {{- if .Values.spi.existingSecret }}
-            - name: spi-certificates
-              mountPath: /opt/bitnami/keycloak/spi-certs
-              readOnly: true
+            {{- if and .Values.bitbucket.sshService.enabled (not (empty .Values.bitbucket.sshService.host)) }}
+            - name: PLUGIN_SSH_BASEURL
+              value: ssh://{{ .Values.bitbucket.sshService.host }}{{ if ne (int .Values.bitbucket.sshService.port) 22 }}:{{ .Values.bitbucket.sshService.port }}{{ end }}/
             {{- end }}
-            {{- if or .Values.initdbScriptsConfigMap .Values.initdbScripts }}
-            - name: custom-init-scripts
-              mountPath: /docker-entrypoint-initdb.d
+            {{ end }}
+            - name: SERVER_CONTEXT_PATH
+              value: {{ include "bitbucket.ingressPath" . | quote }}
+            - name: SERVER_PORT
+              value: {{ .Values.bitbucket.ports.http | quote }}
+            {{ if .Values.ingress.https }}
+            - name: SERVER_SCHEME
+              value: "https"
+            - name: SERVER_SECURE
+              value: "true"
+            {{ end }}
+            - name: SET_PERMISSIONS
+              value: {{ .Values.bitbucket.setPermissions | quote }}
+            {{- if or .Values.volumes.sharedHome.persistentVolumeClaim.create .Values.volumes.sharedHome.customVolume }}
+            - name: BITBUCKET_SHARED_HOME
+              value: {{ .Values.volumes.sharedHome.mountPath | quote }}
             {{- end }}
-            {{- if .Values.extraVolumeMounts }}
-            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{ with .Values.bitbucket.license.secretName }}
+            - name: SETUP_LICENSE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: {{ $.Values.bitbucket.license.secretKey }}
+            {{ end }}
+            {{- with $mirror.upstreamUrl }}
+            - name: PLUGIN_MIRRORING_UPSTREAM_URL
+              value: {{ . | quote }}
+            - name: PLUGIN_MIRRORING_UPSTREAM_TYPE
+              value: "server"
             {{- end }}
-        {{- if .Values.sidecars }}
-        {{- include "common.tplvalues.render" ( dict "value" .Values.sidecars "context" $) | nindent 8 }}
-        {{- end }}
+            - name: JVM_MINIMUM_MEMORY
+              valueFrom:
+                configMapKeyRef:
+                  key: min_heap
+                  name: {{ include "common.names.fullname" . }}-jvm-config
+            - name: JVM_MAXIMUM_MEMORY
+              valueFrom:
+                configMapKeyRef:
+                  key: max_heap
+                  name: {{ include "common.names.fullname" . }}-jvm-config
+            - name: JVM_SUPPORT_RECOMMENDED_ARGS
+              valueFrom:
+                configMapKeyRef:
+                  key: additional_jvm_args
+                  name: {{ include "common.names.fullname" . }}-jvm-config
+            - name: APPLICATION_MODE
+              value: {{ .Values.bitbucket.applicationMode | default "default" | quote }}
+            {{- include "bitbucket.additionalEnvironmentVariables" . | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", {{ .Values.bitbucket.shutdown.command | quote }}]
+        {{- include "fluentd.container" . | nindent 8 }}
+        {{- include "bitbucket.additionalContainers" . | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.bitbucket.topologySpreadConstraints }}
+      topologySpreadConstraints:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName  | quote }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
       volumes:
-        {{- if or .Values.configuration .Values.existingConfigmap }}
-        - name: keycloak-config
-          configMap:
-            name: {{ include "keycloak.configmapName" . }}
-        {{- end }}
-        {{- if .Values.tls.enabled }}
-        - name: certificates
-          secret:
-            secretName: {{ include "keycloak.tlsSecretName" . }}
-            defaultMode: 420
-        {{- end }}
-        {{- if .Values.spi.existingSecret }}
-        - name: spi-certificates
-          secret:
-            secretName: {{ .Values.spi.existingSecret }}
-            defaultMode: 420
-        {{- end }}
-        {{- if or .Values.initdbScriptsConfigMap .Values.initdbScripts }}
-        - name: custom-init-scripts
-          configMap:
-            name: {{ include "keycloak.initdbScriptsCM" . }}
-        {{- end }}
-        {{- if .Values.extraVolumes }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
-        {{- end }}
+        {{- range $i, $n := .Values.additionalFiles }}
+        - name: {{ .name }}-{{$i}}
+          {{ .type }}:
+            {{ if hasPrefix .type "secret" }}{{ .type}}Name{{ else }}name{{ end }}: {{ .name }}
+            items:
+              - key: {{ .key }}
+                path: {{ .key }}
+        {{ end }}
+        {{ include "bitbucket.volumes" . | nindent 8 }}
+        {{ include "fluentd.config.volume" . | nindent 8 }}
+  {{ include "bitbucket.volumeClaimTemplates" . | nindent 2 }}

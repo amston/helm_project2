@@ -1,27 +1,26 @@
 annotations:
-  category: Infrastructure
-  licenses: Apache-2.0
+  truecharts.org/SCALE-support: "true"
+  truecharts.org/catagories: |
+    - utilities
 apiVersion: v2
-appVersion: 3.11.15
+appVersion: 1.38.1
 dependencies:
 - name: common
-  repository: oci://registry-1.docker.io/bitnamicharts
-  tags:
-  - bitnami-common
-  version: 2.x.x
-description: RabbitMQ is an open source general-purpose message broker that is designed
-  for consistent, highly-available messaging scenarios (both synchronous and asynchronous).
-home: https://github.com/bitnami/charts/tree/main/bitnami/rabbitmq
-icon: https://bitnami.com/assets/stacks/rabbitmq/img/rabbitmq-stack-220x234.png
+  repository: https://library-charts.truecharts.org
+  version: 12.6.4
+description: Netdata is high-fidelity infrastructure monitoring and troubleshooting.
+home: https://truecharts.org/charts/stable/netdata
+icon: https://truecharts.org/img/hotlink-ok/chart-icons/netdata.png
 keywords:
-- rabbitmq
-- message queue
-- AMQP
+- netdata
+- monitoring
+kubeVersion: '>=1.16.0-0'
 maintainers:
-- name: Bitnami
-  url: https://github.com/bitnami/charts
-name: rabbitmq
+- email: info@truecharts.org
+  name: TrueCharts
+  url: https://truecharts.org
+name: netdata
 sources:
-- https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq
-- https://www.rabbitmq.com
-version: 11.14.4
+- https://github.com/truecharts/charts/tree/master/charts/stable/netdata
+- https://github.com/netdata
+version: 5.0.10

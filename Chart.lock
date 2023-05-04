@@ -1,6 +1,6 @@
 dependencies:
 - name: common
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 2.2.4
-digest: sha256:829fc25cbbb396161e735c83d152d74a8b3a82d07f08866b885b812d30b920df
-generated: "2023-04-20T09:36:15.52127+02:00"
+  repository: https://library-charts.truecharts.org
+  version: 12.6.4
+digest: sha256:8e383ab10c04f78eccfc6d00d929cbe4715d01ccd406de6469de1d3de201830d
+generated: "2023-05-03T09:53:50.865368736Z"

@@ -1,113 +1,118 @@
-The Prometheus server can be accessed via port {{ .Values.server.service.servicePort }} on the following DNS name from within your cluster:
-{{ template "prometheus.server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
 
-{{ if .Values.server.ingress.enabled -}}
-From outside the cluster, the server URL(s) are:
-{{- range .Values.server.ingress.hosts }}
-http://{{ . }}
-{{- end }}
-{{- else }}
-Get the Prometheus server URL by running these commands in the same shell:
-{{- if contains "NodePort" .Values.server.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.server.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.server.service.type }}
+** Please be patient while the chart is being deployed **
+
+{{- if or .Values.mariadb.enabled .Values.externalDatabase.host -}}
+
+{{- if empty (include "suitecrm.host" .) -}}
+###############################################################################
+### ERROR: You did not provide an external host in your 'helm install' call ###
+###############################################################################
+
+This deployment will be incomplete until you configure SuiteCRM with a resolvable
+host. To configure SuiteCRM with the URL of your service:
+
+1. Get the SuiteCRM URL by running:
+
+  {{- if eq .Values.service.type "NodePort" }}
+
+  export APP_PORT=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} -o jsonpath="{.spec.ports[0].nodePort}")
+  export APP_HOST=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+
+  {{- else if eq .Values.service.type "LoadBalancer" }}
+
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.server.fullname" . }}'
+        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
 
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.server.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$SERVICE_IP:{{ .Values.server.service.servicePort }}
-{{- else if contains "ClusterIP"  .Values.server.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.server.name }}" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9090
-{{- end }}
+  export APP_HOST=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+  export APP_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "suitecrm.secretName" . }} -o jsonpath="{.data.suitecrm-password}" | base64 -d)
+  export DATABASE_ROOT_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "suitecrm.databaseSecretName" . }} -o jsonpath="{.data.mariadb-root-password}" | base64 -d)
+  {{- end }}
+  export APP_DATABASE_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "suitecrm.databaseSecretName" . }} -o jsonpath="{.data.mariadb-password}" | base64 -d)
 
+2. Complete your SuiteCRM deployment by running:
 
-{{- if .Values.server.persistentVolume.enabled }}
+{{- if .Values.mariadb.enabled }}
+
+  helm upgrade --namespace {{ .Release.Namespace }} {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/{{ .Chart.Name }} \
+    --set suitecrmHost=$APP_HOST,suitecrmPassword=$APP_PASSWORD,mariadb.auth.rootPassword=$DATABASE_ROOT_PASSWORD,mariadb.auth.password=$APP_DATABASE_PASSWORD{{- if .Values.global }}{{- if .Values.global.imagePullSecrets }},global.imagePullSecrets={{ .Values.global.imagePullSecrets }}{{- end }}{{- end }}
 {{- else }}
-#################################################################################
-######   WARNING: Persistence is disabled!!! You will lose your data when   #####
-######            the Server pod is terminated.                             #####
-#################################################################################
-{{- end }}
+
+  ## PLEASE UPDATE THE EXTERNAL DATABASE CONNECTION PARAMETERS IN THE FOLLOWING COMMAND AS NEEDED ##
+
+  helm upgrade --namespace {{ .Release.Namespace }} {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/{{ .Chart.Name }} \
+    --set suitecrmPassword=$APP_PASSWORD,suitecrmHost=$APP_HOST,service.type={{ .Values.service.type }},mariadb.enabled=false{{- if not (empty .Values.externalDatabase.host) }},externalDatabase.host={{ .Values.externalDatabase.host }}{{- end }}{{- if not (empty .Values.externalDatabase.user) }},externalDatabase.user={{ .Values.externalDatabase.user }}{{- end }}{{- if not (empty .Values.externalDatabase.password) }},externalDatabase.password={{ .Values.externalDatabase.password }}{{- end }}{{- if not (empty .Values.externalDatabase.database) }},externalDatabase.database={{ .Values.externalDatabase.database }}{{- end }}{{- if .Values.global }}{{- if .Values.global.imagePullSecrets }},global.imagePullSecrets={{ .Values.global.imagePullSecrets }}{{- end }}{{- end }}
 {{- end }}
 
-{{ if .Values.alertmanager.enabled }}
-The Prometheus alertmanager can be accessed via port {{ .Values.alertmanager.service.servicePort }} on the following DNS name from within your cluster:
-{{ template "prometheus.alertmanager.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+{{- else -}}
+1. Get the SuiteCRM URL by running:
 
-{{ if .Values.alertmanager.ingress.enabled -}}
-From outside the cluster, the alertmanager URL(s) are:
-{{- range .Values.alertmanager.ingress.hosts }}
-http://{{ . }}
-{{- end }}
+{{- if eq .Values.service.type "ClusterIP" }}
+
+  echo "SuiteCRM URL: http://127.0.0.1:8080/"
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} 8080:{{ coalesce .Values.service.ports.http .Values.service.port }}
+
 {{- else }}
-Get the Alertmanager URL by running these commands in the same shell:
-{{- if contains "NodePort" .Values.alertmanager.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.alertmanager.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.alertmanager.service.type }}
+
+{{- $port:=(coalesce .Values.service.ports.http .Values.service.port) | toString }}
+
+  echo "SuiteCRM URL: http://{{ include "suitecrm.host" . }}{{- if ne $port "80" }}:{{ coalesce .Values.service.ports.http .Values.service.port }}{{ end }}/"
+
+{{- end }}
+
+2. Get your SuiteCRM login credentials by running:
+
+  echo Username : {{ .Values.suitecrmUsername }}
+  echo Password : $(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "suitecrm.secretName" . }} -o jsonpath="{.data.suitecrm-password}" | base64 -d)
+{{- end }}
+
+{{- else -}}
+
+########################################################################################
+### ERROR: You did not provide an external database host in your 'helm install' call ###
+########################################################################################
+
+This deployment will be incomplete until you configure SuiteCRM with a resolvable database
+host. To configure SuiteCRM to use and external database host:
+1. Complete your SuiteCRM deployment by running:
+
+{{- if eq .Values.service.type "NodePort" }}
+  export APP_HOST=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+{{- else if eq .Values.service.type "LoadBalancer" }}
+
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.alertmanager.fullname" . }}'
+        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
 
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.alertmanager.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$SERVICE_IP:{{ .Values.alertmanager.service.servicePort }}
-{{- else if contains "ClusterIP"  .Values.alertmanager.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.alertmanager.name }}" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9093
-{{- end }}
-{{- end }}
-
-{{- if .Values.alertmanager.persistence.enabled }}
+  export APP_HOST=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
 {{- else }}
-#################################################################################
-######   WARNING: Persistence is disabled!!! You will lose your data when   #####
-######            the AlertManager pod is terminated.                       #####
-#################################################################################
+
+  export APP_HOST=127.0.0.1
 {{- end }}
+  export APP_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "suitecrm.secretName" . }} -o jsonpath="{.data.suitecrm-password}" | base64 -d)
+
+  ## PLEASE UPDATE THE EXTERNAL DATABASE CONNECTION PARAMETERS IN THE FOLLOWING COMMAND AS NEEDED ##
+
+  helm upgrade --namespace {{ .Release.Namespace }} {{ .Release.Name }} oci://registry-1.docker.io/bitnamicharts/{{ .Chart.Name }} \
+    --set suitecrmPassword=$APP_PASSWORD,suitecrmHost=$APP_HOST,service.type={{ .Values.service.type }},mariadb.enabled=false{{- if not (empty .Values.externalDatabase.user) }},externalDatabase.user={{ .Values.externalDatabase.user }}{{- end }}{{- if not (empty .Values.externalDatabase.password) }},externalDatabase.password={{ .Values.externalDatabase.password }}{{- end }}{{- if not (empty .Values.externalDatabase.database) }},externalDatabase.database={{ .Values.externalDatabase.database }}{{- end }},externalDatabase.host=YOUR_EXTERNAL_DATABASE_HOST{{- if .Values.global }}{{- if .Values.global.imagePullSecrets }},global.imagePullSecrets={{ .Values.global.imagePullSecrets }}{{- end }}{{- end }}
 {{- end }}
 
-{{- if (index .Values "prometheus-node-exporter" "enabled") }}
-#################################################################################
-######   WARNING: Pod Security Policy has been disabled by default since    #####
-######            it deprecated after k8s 1.25+. use                        #####
-######            (index .Values "prometheus-node-exporter" "rbac"          #####
-###### .          "pspEnabled") with (index .Values                         #####
-######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
-######            in case you still need it.                                #####
-#################################################################################
-{{- end }}
+{{- include "common.warnings.rollingTag" .Values.image }}
+{{- include "common.warnings.rollingTag" .Values.metrics.image }}
+{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
+{{- include "common.warnings.rollingTag" .Values.certificates.image }}
 
-{{ if (index .Values "prometheus-pushgateway" "enabled") }}
-The Prometheus PushGateway can be accessed via port {{ index .Values "prometheus-pushgateway" "service" "port" }} on the following DNS name from within your cluster:
-{{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }}.{{ .Release.Namespace }}.svc.cluster.local
+{{- $passwordValidationErrors := list -}}
+{{- if not .Values.existingSecret -}}
+    {{- $secretName := include "suitecrm.secretName" . -}}
+    {{- $requiredSuiteCRMPassword := dict "valueKey" "suitecrmPassword" "secret" $secretName "field" "suitecrm-password" "context" $ -}}
+    {{- $requiredSuiteCRMPasswordError := include "common.validations.values.single.empty" $requiredSuiteCRMPassword -}}
+    {{- $passwordValidationErrors = append $passwordValidationErrors $requiredSuiteCRMPasswordError -}}
+{{- end -}}
 
-{{ if (index .Values "prometheus-pushgateway" "ingress" "enabled") -}}
-From outside the cluster, the pushgateway URL(s) are:
-{{- range (index .Values "prometheus-pushgateway" "ingress" "hosts") }}
-http://{{ . }}
-{{- end }}
-{{- else }}
-Get the PushGateway URL by running these commands in the same shell:
-{{- $pushgateway_svc_type := index .Values "prometheus-pushgateway" "service" "type" -}}
-{{- if contains "NodePort" $pushgateway_svc_type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" $pushgateway_svc_type }}
-  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }}'
+{{- $mariadbSecretName := include "suitecrm.databaseSecretName" . -}}
+{{- $mariadbPasswordValidationErrors := include "common.validations.values.mariadb.passwords" (dict "secret" $mariadbSecretName "subchart" true "context" $) -}}
+{{- $passwordValidationErrors = append $passwordValidationErrors $mariadbPasswordValidationErrors -}}
 
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$SERVICE_IP:{{ index .Values "prometheus-pushgateway" "service" "port" }}
-{{- else if contains "ClusterIP" $pushgateway_svc_type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ include "prometheus.name" (index .Subcharts "prometheus-pushgateway") }},component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9091
-{{- end }}
-{{- end }}
-{{- end }}
-
-For more information on running Prometheus, visit:
-https://prometheus.io/
+{{- include "common.errors.upgrade.passwords.empty" (dict "validationErrors" $passwordValidationErrors "context" $) -}}

@@ -1,40 +1,36 @@
-{{- if not .Values.server.statefulSet.enabled -}}
-{{- if .Values.server.persistentVolume.enabled -}}
-{{- if not .Values.server.persistentVolume.existingClaim -}}
-apiVersion: v1
+{{- if and (include "suitecrm.host" .) .Values.persistence.enabled (not .Values.persistence.existingClaim) -}}
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  {{- if .Values.server.persistentVolume.annotations }}
+  name: {{ include "common.names.fullname" . }}-suitecrm
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.persistence.annotations .Values.commonAnnotations }}
   annotations:
-{{ toYaml .Values.server.persistentVolume.annotations | indent 4 }}
+    {{- if .Values.persistence.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.persistence.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
   {{- end }}
-  labels:
-    {{- include "prometheus.server.labels" . | nindent 4 }}
-  name: {{ template "prometheus.server.fullname" . }}
-  namespace: {{ include "prometheus.namespace" . }}
 spec:
-  accessModes:
-{{ toYaml .Values.server.persistentVolume.accessModes | indent 4 }}
-{{- if .Values.server.persistentVolume.storageClass }}
-{{- if (eq "-" .Values.server.persistentVolume.storageClass) }}
+  {{- if .Values.persistence.hostPath }}
   storageClassName: ""
-{{- else }}
-  storageClassName: "{{ .Values.server.persistentVolume.storageClass }}"
-{{- end }}
-{{- end }}
-{{- if .Values.server.persistentVolume.volumeBindingMode }}
-  volumeBindingMode: "{{ .Values.server.persistentVolume.volumeBindingMode }}"
-{{- end }}
+  {{- end }}
+  accessModes:
+  {{- if not (empty .Values.persistence.accessModes) }}
+  {{- range .Values.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- else }}
+    - {{ .Values.persistence.accessMode | quote }}
+  {{- end }}
   resources:
     requests:
-      storage: "{{ .Values.server.persistentVolume.size }}"
-{{- if .Values.server.persistentVolume.selector }}
-  selector:
-  {{- toYaml .Values.server.persistentVolume.selector | nindent 4 }}
-{{- end -}}
-{{- if .Values.server.persistentVolume.volumeName }}
-  volumeName: "{{ .Values.server.persistentVolume.volumeName }}"
-{{- end -}}
-{{- end -}}
-{{- end -}}
+      storage: {{ .Values.persistence.size | quote }}
+  {{- include "suitecrm.storageClass" . | nindent 2 }}
 {{- end -}}

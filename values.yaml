@@ -21,41 +21,41 @@ global:
 ## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
 ##
 kubeVersion: ""
-## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+## @param nameOverride String to partially override opencart.fullname template (will maintain the release name)
 ##
 nameOverride: ""
-## @param fullnameOverride String to fully override common.names.fullname template
+## @param fullnameOverride String to fully override opencart.fullname template
 ##
 fullnameOverride: ""
-## @param commonLabels Labels to add to all deployed objects
+## @param namespaceOverride String to fully override common.names.namespace
 ##
-commonLabels: {}
-## @param commonAnnotations Annotations to add to all deployed objects
+namespaceOverride: ""
+## @param commonAnnotations Common annotations to add to all OpenCart resources (sub-charts are not considered). Evaluated as a template
 ##
 commonAnnotations: {}
-## @param clusterDomain Default Kubernetes cluster domain
+## @param commonLabels Common labels to add to all OpenCart resources (sub-charts are not considered). Evaluated as a template
 ##
-clusterDomain: cluster.local
-## @param extraDeploy Array of extra objects to deploy with the release
+commonLabels: {}
+## @param extraDeploy Array of extra objects to deploy with the release (evaluated as a template)
 ##
 extraDeploy: []
 
-## @section Mediawiki parameters
+## @section OpenCart parameters
 
-## Bitnami DokuWiki image version
-## ref: https://hub.docker.com/r/bitnami/mediawiki/tags/
-## @param image.registry MediaWiki image registry
-## @param image.repository MediaWiki image repository
-## @param image.tag MediaWiki image tag (immutable tags are recommended)
-## @param image.digest MediaWiki image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
-## @param image.pullPolicy Image pull policy
+## Bitnami OpenCart image version
+## ref: https://hub.docker.com/r/bitnami/opencart/tags/
+## @param image.registry OpenCart image registry
+## @param image.repository OpenCart image repository
+## @param image.tag OpenCart image tag (immutable tags are recommended)
+## @param image.digest OpenCart image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+## @param image.pullPolicy OpenCart image pull policy
 ## @param image.pullSecrets Specify docker-registry secret names as an array
-## @param image.debug Enable MediaWiki image debug mode
+## @param image.debug Specify if debug logs should be enabled
 ##
 image:
   registry: docker.io
-  repository: bitnami/mediawiki
-  tag: 1.39.3-debian-11-r9
+  repository: bitnami/opencart
+  tag: 4.0.2-1-debian-11-r5
   digest: ""
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
@@ -65,12 +65,12 @@ image:
   ## Optionally specify an array of imagePullSecrets.
   ## Secrets must be manually created in the namespace.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-  ## e.g:
+  ## Example:
   ## pullSecrets:
   ##   - myRegistryKeySecretName
   ##
   pullSecrets: []
-  ## Enable debug mode
+  ## Set to true if you would like to see extra information on logs
   ##
   debug: false
 ## @param hostAliases [array] Deployment pod host aliases
@@ -82,251 +82,54 @@ hostAliases:
   - ip: "127.0.0.1"
     hostnames:
       - "status.localhost"
-## @param mediawikiUser User of the application
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#environment-variables
+## @param replicaCount Number of replicas (requires ReadWriteMany PVC support)
 ##
-mediawikiUser: user
-## @param mediawikiPassword Application password
+replicaCount: 1
+## @param opencartSkipInstall Skip OpenCart installation wizard. Useful for migrations and restoring from SQL dump
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#configuration
+##
+opencartSkipInstall: false
+## @param opencartHost OpenCart host to create application URLs
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#configuration
+##
+opencartHost: ""
+## @param opencartUsername User of the application
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#configuration
+##
+opencartUsername: user
+## @param opencartPassword Application password
 ## Defaults to a random 10-character alphanumeric string if not set
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#environment-variables
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#configuration
 ##
-mediawikiPassword: ""
-## @param mediawikiSecret Existing `Secret` containing the password for the `mediawikiUser` user; must contain the key `mediawiki-password` and optional key `smtp-password`
-## Mutually exclusive with `mediawikiPassword`
+opencartPassword: ""
+## @param opencartEmail Admin email
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#configuration
 ##
-mediawikiSecret: ""
-## @param mediawikiEmail Admin email
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#environment-variables
+opencartEmail: user@example.com
+## @param opencartEnableHttps Whether to use HTTPS by default, default is false.
+## For applications with Ingress and TLS feature enabled, it's defaulted to true and can be
+## overrided by the OPENCART_ENABLE_HTTPS environment variable.
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#environment-variables
 ##
-mediawikiEmail: user@example.com
-## @param mediawikiName Name for the wiki
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#environment-variables
-##
-mediawikiName: My Wiki
-## @param mediawikiHost Mediawiki host to create application URLs
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#configuration
-##
-mediawikiHost: ""
+opencartEnableHttps: false
 ## @param allowEmptyPassword Allow DB blank passwords
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#environment-variables
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart#environment-variables
 ##
-allowEmptyPassword: "yes"
-## SMTP mail delivery configuration
-## ref: https://github.com/bitnami/containers/tree/main/bitnami/mediawiki#smtp-configuration
-## @param smtpHost SMTP host
-## @param smtpPort SMTP port
-## @param smtpHostID SMTP host ID
-## @param smtpUser SMTP user
-## @param smtpPassword SMTP password
-##
-smtpHost: ""
-smtpPort: ""
-smtpHostID: ""
-smtpUser: ""
-smtpPassword: ""
+allowEmptyPassword: true
 ## @param command Override default container command (useful when using custom images)
 ##
 command: []
 ## @param args Override default container args (useful when using custom images)
 ##
 args: []
-## @param lifecycleHooks for the Mediawiki container(s) to automate configuration before or after startup
-##
-lifecycleHooks: {}
-## @param extraEnvVars Extra environment variables to be set on Mediawki container
-## Example:
-## extraEnvVars:
-##   - name: FOO
-##     value: "bar"
-##
-extraEnvVars: []
-## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars
-##
-extraEnvVarsCM: ""
-## @param extraEnvVarsSecret Name of existing Secret containing extra env vars
-##
-extraEnvVarsSecret: ""
-
-## @section Mediawiki deployment parameters
-
-## Strategy to use to update Pods
-## @param updateStrategy.type StrategyType can be set to RollingUpdate or OnDelete
+## @param updateStrategy.type Update strategy - only really applicable for deployments with RWO PVs attached
+## If replicas = 1, an update can get "stuck", as the previous pod remains attached to the
+## PV, and the "incoming" pod can never start. Changing the strategy to "Recreate" will
+## terminate the single previous pod, so that the new, incoming pod can attach to the PV
 ##
 updateStrategy:
   type: RollingUpdate
-## Mediawiki pods' Security Context
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-## @param podSecurityContext.enabled Enable Mediawiki pods' Security Context
-## @param podSecurityContext.fsGroup Group ID for the volumes of the pod
-##
-podSecurityContext:
-  enabled: true
-  fsGroup: 1001
-## Mediawiki containers' SecurityContext
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
-## @param containerSecurityContext.enabled Enable Mediawiki containers' SecurityContext
-## @param containerSecurityContext.runAsUser User ID to run Mediawiki containers
-## @param containerSecurityContext.runAsNonRoot Set Mediawiki container's Security Context runAsNonRoot
-##
-containerSecurityContext:
-  enabled: true
-  runAsUser: 1001
-  runAsNonRoot: true
-## Mediawiki resource requests and limits
-## ref: https://kubernetes.io/docs/user-guide/compute-resources/
-## We usually recommend not to specify default resources and to leave this as a conscious
-## choice for the user. This also increases chances charts run on environments with little
-## resources, such as Minikube. If you do want to specify resources, uncomment the following
-## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-## @param resources.limits The resources limits for the Mediawki container
-## @param resources.requests [object] The requested resources for the Mediawki container
-##
-resources:
-  ## Example:
-  ## limits:
-  ##    cpu: 200m
-  ##    memory: 256Mi
-  limits: {}
-  requests:
-    memory: 512Mi
-    cpu: 300m
-## Mediawiki containers' startup probe.
-## Configure extra options for startup probe
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
-## @param startupProbe.enabled Enable startupProbe
-## @param startupProbe.httpGet.path Request path for startupProbe
-## @param startupProbe.httpGet.port Port for startupProbe
-## @param startupProbe.httpGet.httpHeaders [array] Headers for startupProbe
-## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
-## @param startupProbe.periodSeconds Period seconds for startupProbe
-## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
-## @param startupProbe.failureThreshold Failure threshold for startupProbe
-## @param startupProbe.successThreshold Success threshold for startupProbe
-##
-startupProbe:
-  enabled: false
-  httpGet:
-    path: /api.php?action=query&meta=siteinfo&format=none
-    port: http
-    httpHeaders:
-      - name: Host
-        value: "{{ include \"mediawiki.host\" . }}"
-  initialDelaySeconds: 120
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-## Mediawiki containers' liveness probe.
-## Configure extra options for liveness probe
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
-## @param livenessProbe.enabled Enable livenessProbe
-## @param livenessProbe.httpGet.path Request path for livenessProbe
-## @param livenessProbe.httpGet.port Port for livenessProbe
-## @param livenessProbe.httpGet.httpHeaders [array] Headers for livenessProbe
-## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
-## @param livenessProbe.periodSeconds Period seconds for livenessProbe
-## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
-## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
-## @param livenessProbe.successThreshold Success threshold for livenessProbe
-##
-livenessProbe:
-  enabled: true
-  httpGet:
-    path: /api.php?action=query&meta=siteinfo&format=none
-    port: http
-    httpHeaders:
-      - name: Host
-        value: "{{ include \"mediawiki.host\" . }}"
-  initialDelaySeconds: 120
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-## Mediawiki containers' readinessProbe probe.
-## Configure extra options for liveness probe
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
-## @param readinessProbe.enabled Enable readinessProbe
-## @param readinessProbe.httpGet.path Request path for readinessProbe
-## @param readinessProbe.httpGet.port Port for readinessProbe
-## @param readinessProbe.httpGet.httpHeaders [array] Headers for livenessProbe
-## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
-## @param readinessProbe.periodSeconds Period seconds for readinessProbe
-## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
-## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
-## @param readinessProbe.successThreshold Success threshold for readinessProbe
-##
-readinessProbe:
-  enabled: true
-  httpGet:
-    path: /api.php?action=query&meta=siteinfo&format=none
-    port: http
-    httpHeaders:
-      - name: Host
-        value: "{{ include \"mediawiki.host\" . }}"
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-## @param customStartupProbe Override default startup probe
-##
-customStartupProbe: {}
-## @param customLivenessProbe Override default liveness probe
-##
-customLivenessProbe: {}
-## @param customReadinessProbe Override default readiness probe
-##
-customReadinessProbe: {}
-## @param podLabels Extra labels for Mediawki pods
-## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-##
-podLabels: {}
-## @param podAnnotations Annotations for Mediawki pods
-## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-##
-podAnnotations: {}
-## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
-## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
-##
-podAffinityPreset: ""
-## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
-## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
-##
-podAntiAffinityPreset: soft
-## Node affinity preset
-## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-## Allowed values: soft, hard
-##
-nodeAffinityPreset:
-  ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
-  ##
-  type: ""
-  ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set.
-  ## E.g.
-  ## key: "kubernetes.io/e2e-az-name"
-  ##
-  key: ""
-  ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set.
-  ## E.g.
-  ## values:
-  ##   - e2e-az1
-  ##   - e2e-az2
-  ##
-  values: []
-## @param affinity Affinity for pod assignment. Evaluated as a template.
-## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-## Note: podAffinityPreset, podAntiAffinityPreset, and nodeAffinityPreset will be ignored when it's set
-##
-affinity: {}
-## @param nodeSelector Node labels for pod assignment. Evaluated as a template.
-## ref: https://kubernetes.io/docs/user-guide/node-selection/
-##
-nodeSelector: {}
-## @param tolerations Tolerations for pod assignment. Evaluated as a template.
-## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-##
-tolerations: []
-## @param priorityClassName Mediawiki pods' priorityClassName
+## @param priorityClassName OpenCart pods' priorityClassName
 ##
 priorityClassName: ""
 ## @param schedulerName Name of the k8s scheduler (other than default)
@@ -338,34 +141,55 @@ schedulerName: ""
 ## The value is evaluated as a template
 ##
 topologySpreadConstraints: []
-## @param extraVolumes Optionally specify extra list of additional volumes for Mediawki pods
+## @param extraEnvVars An array to add extra env vars
+## For example:
+##  - name: BEARER_AUTH
+##    value: true
+##
+extraEnvVars: []
+## @param extraEnvVarsCM ConfigMap with extra environment variables
+##
+extraEnvVarsCM: ""
+## @param extraEnvVarsSecret Secret with extra environment variables
+##
+extraEnvVarsSecret: ""
+## @param extraVolumes Extra volumes to add to the deployment. Requires setting `extraVolumeMounts`
 ##
 extraVolumes: []
-## @param extraVolumeMounts Optionally specify extra list of additional volumeMounts for Mediawki container(s)
+## @param extraVolumeMounts Extra volume mounts to add to the container. Normally used with `extraVolumes`.
 ##
 extraVolumeMounts: []
-## @param initContainers Add additional init containers to the Mediawki pods
-## Example:
-## initContainers:
-##   - name: your-image-name
-##     image: your-image
-##     imagePullPolicy: Always
-##     ports:
-##       - name: portname
-##         containerPort: 1234
+## @param initContainers Extra init containers to add to the deployment
 ##
 initContainers: []
-## @param sidecars Add additional sidecar containers to the Mediawki pods
-## Example:
-## sidecars:
-##   - name: your-image-name
-##     image: your-image
-##     imagePullPolicy: Always
-##     ports:
-##       - name: portname
-##         containerPort: 1234
+## @param sidecars Extra sidecar containers to add to the deployment
 ##
 sidecars: []
+## @param tolerations Tolerations for pod assignment. Evaluated as a template.
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+## @param existingSecret Name of a secret with the application password
+##
+existingSecret: ""
+## SMTP mail delivery configuration
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/opencart/#smtp-configuration
+## @param smtpHost SMTP host
+## @param smtpPort SMTP port
+## @param smtpUser SMTP user
+## @param smtpPassword SMTP password
+## @param smtpProtocol SMTP Protocol (options: ssl,tls, nil)
+##
+smtpHost: ""
+smtpPort: ""
+smtpUser: ""
+smtpPassword: ""
+smtpProtocol: ""
+## @param containerPorts [object] Container ports
+##
+containerPorts:
+  http: 8080
+  https: 8443
 ## Enable persistence using Persistent Volume Claims
 ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
 ##
@@ -373,7 +197,7 @@ persistence:
   ## @param persistence.enabled Enable persistence using PVC
   ##
   enabled: true
-  ## @param persistence.storageClass PVC Storage Class for MediaWiki volume
+  ## @param persistence.storageClass OpenCart Data Persistent Volume Storage Class
   ## If defined, storageClassName: <storageClass>
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
   ## If undefined (the default) or set to null, no storageClassName spec is
@@ -381,42 +205,187 @@ persistence:
   ##   GKE, AWS & OpenStack)
   ##
   storageClass: ""
-  ## @param persistence.existingClaim An Existing PVC name for MediaWiki volume
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  ##
+  ## @param persistence.accessModes PVC Access Mode for OpenCart volume
+  ##
+  accessModes:
+    - ReadWriteOnce
+  ## @param persistence.size PVC Storage Request for OpenCart volume
+  ##
+  size: 8Gi
+  ## @param persistence.existingClaim An Existing PVC name
   ## Requires persistence.enabled: true
   ## If defined, PVC must be created manually before volume will be bound
   ##
   existingClaim: ""
-  ## @param persistence.accessModes [array] Persistent Volume access modes
+  ## @param persistence.hostPath Host mount path for OpenCart volume
+  ## Requires persistence.enabled: true
+  ## Requires persistence.existingClaim: nil|false
+  ## Default: nil.
   ##
-  accessModes:
-    - ReadWriteOnce
-  ## @param persistence.size PVC Storage Request for MediaWiki volume
-  ##
-  size: 8Gi
+  hostPath: ""
   ## @param persistence.annotations Persistent Volume Claim annotations
   ##
   annotations: {}
+## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+##
+podAffinityPreset: ""
+## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+##
+podAntiAffinityPreset: soft
+## Node affinity preset
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+##
+nodeAffinityPreset:
+  ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ##
+  type: ""
+  ## @param nodeAffinityPreset.key Node label key to match Ignored if `affinity` is set.
+  ## E.g.
+  ## key: "kubernetes.io/e2e-az-name"
+  ##
+  key: ""
+  ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set.
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []
+## @param affinity Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+## Note: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+##
+affinity: {}
+## @param nodeSelector Node labels for pod assignment
+## ref: https://kubernetes.io/docs/user-guide/node-selection/
+##
+nodeSelector: {}
+## Configure resource requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.requests [object] The requested resources for the container
+## @param resources.limits The resources limits for the container
+##
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 300m
+  limits: {}
+## Configure Pods Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param podSecurityContext.enabled Enable OpenCart pods' Security Context
+## @param podSecurityContext.fsGroup OpenCart pods' group ID
+##
+podSecurityContext:
+  enabled: true
+  fsGroup: 1001
+## Configure Container Security Context (only main container)
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+## @param containerSecurityContext.enabled Enable OpenCart containers' Security Context
+## @param containerSecurityContext.runAsUser OpenCart containers' Security Context runAsUser
+## @param containerSecurityContext.runAsNonRoot OpenCart containers' Security Context runAsNonRoot
+##
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsNonRoot: true
+## Configure extra options for startup probe
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-startup-readiness-probes/#configure-probes
+## @param startupProbe.enabled Enable startupProbe
+## @param startupProbe.path Request path for startupProbe
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+##
+startupProbe:
+  enabled: false
+  path: /administration/
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+## Configure extra options for liveness probe
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
+## @param livenessProbe.enabled Enable livenessProbe
+## @param livenessProbe.path Request path for livenessProbe
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+##
+livenessProbe:
+  enabled: true
+  path: /administration/
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+## Configure extra options for readiness probe
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
+## @param readinessProbe.enabled Enable readinessProbe
+## @param readinessProbe.path Request path for readinessProbe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+##
+readinessProbe:
+  enabled: true
+  path: /administration/
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 6
+  successThreshold: 1
+## @param customStartupProbe Override default startup probe
+##
+customStartupProbe: {}
+## @param customLivenessProbe Override default liveness probe
+##
+customLivenessProbe: {}
+## @param customReadinessProbe Override default readiness probe
+##
+customReadinessProbe: {}
+## @param lifecycleHooks lifecycleHooks for the container to automate configuration before or after startup
+##
+lifecycleHooks: {}
+## @param podAnnotations Pod annotations
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+##
+podAnnotations: {}
+## @param podLabels Add additional labels to the pod (evaluated as a template)
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##
+podLabels: {}
 
-## @section Traffic Exposure parameters
+## @section Traffic Exposure Parameters
 
-## Kubernetes service configuration
+## Kubernetes configuration
 ## For minikube, set this to NodePort, elsewhere use LoadBalancer
-## Use serviceLoadBalancerIP to request a specific static IP, otherwise leave blank
 ##
 service:
   ## @param service.type Kubernetes Service type
-  ## For minikube, set this to NodePort, elsewhere use LoadBalancer
   ##
   type: LoadBalancer
   ## @param service.ports.http Service HTTP port
-  ## @param service.ports.https HTTPS Port. Set this to any value (recommended: 443) to enable the https service port
+  ## @param service.ports.https Service HTTPS port
   ##
   ports:
     http: 80
     https: 443
-  ## Use nodePorts to requests some specific ports when using NodePort
-  ## @param service.nodePorts.http Kubernetes http node port
-  ## @param service.nodePorts.https Kubernetes https node port
+  ## @param service.nodePorts.http Kubernetes HTTP node port
+  ## @param service.nodePorts.https Kubernetes HTTPS node port
   ## nodePorts:
   ##   http: <to set explicitly, choose port between 30000-32767>
   ##   https: <to set explicitly, choose port between 30000-32767>
@@ -424,44 +393,45 @@ service:
   nodePorts:
     http: ""
     https: ""
-  ## @param service.externalTrafficPolicy Enable client source IP preservation
-  ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
-  ##
-  externalTrafficPolicy: Cluster
-  ## @param service.clusterIP Mediawiki service Cluster IP
+  ## @param service.clusterIP OpenCart service Cluster IP
   ## e.g.:
   ## clusterIP: None
   ##
   clusterIP: ""
-  ## @param service.loadBalancerIP Mediawiki service Load Balancer IP
-  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  ##
-  loadBalancerIP: ""
-  ## @param service.loadBalancerSourceRanges Mediawiki service Load Balancer sources
+  ## @param service.loadBalancerSourceRanges OpenCart service Load Balancer sources
   ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
   ## e.g:
   ## loadBalancerSourceRanges:
   ##   - 10.10.10.0/24
   ##
   loadBalancerSourceRanges: []
+  ## @param service.loadBalancerIP OpenCart service Load Balancer IP
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  ##
+  loadBalancerIP: ""
+  ## @param service.externalTrafficPolicy Enable client source IP preservation
+  ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+  ##
+  externalTrafficPolicy: Cluster
   ## @param service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
   ##
   extraPorts: []
-  ## @param service.annotations Additional custom annotations for Mediawiki service
+  ## @param service.annotations Additional custom annotations for OpenCart service
   ##
   annotations: {}
-  ## @param service.sessionAffinity Session Affinity for Kubernetes service, can be "None" or "ClientIP"
-  ## If "ClientIP", consecutive client requests will be directed to the same Pod
-  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+  ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
+  ## Values: ClientIP or None
+  ## ref: https://kubernetes.io/docs/user-guide/services/
   ##
-  sessionAffinity: None
+  sessionAffinity: "None"
   ## @param service.sessionAffinityConfig Additional settings for the sessionAffinity
   ## sessionAffinityConfig:
   ##   clientIP:
   ##     timeoutSeconds: 300
   ##
   sessionAffinityConfig: {}
-## Configure the ingress resource that allows you to access the Mediawiki installation. Set up the URL
+## Configure the ingress resource that allows you to access the
+## Opencart installation. Set up the URL
 ## ref: https://kubernetes.io/docs/user-guide/ingress/
 ##
 ingress:
@@ -475,13 +445,13 @@ ingress:
   ## @param ingress.pathType Ingress path type
   ##
   pathType: ImplementationSpecific
-  ## @param ingress.apiVersion Force Ingress API version (automatically detected if not set)
+  ## @param ingress.apiVersion Override API Version (automatically detected if not set)
   ##
   apiVersion: ""
   ## @param ingress.hostname Default host for the ingress resource
   ##
-  hostname: mediawiki.local
-  ## @param ingress.path The Path to Mediawiki. You may need to set this to '/*' in order to use this with ALB ingress controllers.
+  hostname: opencart.local
+  ## @param ingress.path The Path to Opencart. You may need to set this to '/*' in order to use this with ALB ingress controllers.
   ##
   path: /
   ## @param ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
@@ -497,15 +467,18 @@ ingress:
   ##
   annotations: {}
   ## @param ingress.tls Enable TLS configuration for the hostname defined at ingress.hostname parameter
-  ## TLS certificates will be retrieved from a TLS secret with name: {{- printf "%s-tls" .Values.ingress.hostname }}
+  ## TLS certificates will be retrieved from a TLS secret with name: {{- printf "%s-tls" .Values.ingress.hostname | trunc 63 | trimSuffix "-" }}
   ## You can use the ingress.secrets parameter to create this TLS secret or relay on cert-manager to create it
   ##
   tls: false
   ## @param ingress.extraHosts The list of additional hostnames to be covered with this ingress record.
   ## Most likely the hostname above will be enough, but in the event more hosts are needed, this is an array
   ## extraHosts:
-  ## - name: mediawiki.local
+  ## - name: opencart.local
   ##   path: /
+  ##
+  ## The tls configuration for the ingress
+  ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
   ##
   extraHosts: []
   ## @param ingress.extraPaths Any additional arbitrary paths that may need to be added to the ingress under the main host.
@@ -521,8 +494,8 @@ ingress:
   ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
   ## extraTls:
   ## - hosts:
-  ##     - mediawiki.local
-  ##   secretName: mediawiki.local-tls
+  ##     - opencart.local
+  ##   secretName: opencart.local-tls
   ##
   extraTls: []
   ## @param ingress.secrets If you're providing your own certificates, please use this to add the certificates as secrets
@@ -535,7 +508,7 @@ ingress:
   ## It is also possible to create and manage the certificates outside of this helm chart
   ## Please see README.md for more information
   ## e.g:
-  ## - name: mediawiki.local-tls
+  ## - name: opencart.local-tls
   ##   key:
   ##   certificate:
   ##
@@ -549,12 +522,12 @@ ingress:
   ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
   ## e.g:
   ## extraRules:
-  ## - host: example.local
+  ## - host: opencart.local
   ##     http:
   ##       path: /
   ##       backend:
   ##         service:
-  ##           name: example-svc
+  ##           name: opencart-svc
   ##           port:
   ##             name: http
   ##
@@ -566,11 +539,11 @@ ingress:
 ## https://github.com/bitnami/charts/blob/main/bitnami/mariadb/values.yaml
 ##
 mariadb:
-  ## @param mariadb.enabled Whether to deploy a mariadb server to satisfy the applications database requirements.
+  ## @param mariadb.enabled Whether to deploy a mariadb server to satisfy the applications database requirements
   ## To use an external database set this to false and configure the externalDatabase parameters
   ##
   enabled: true
-  ## @param mariadb.architecture MariaDB architecture (`standalone` or `replication`)
+  ## @param mariadb.architecture MariaDB architecture. Allowed values: `standalone` or `replication`
   ##
   architecture: standalone
   ## MariaDB Authentication parameters
@@ -583,27 +556,23 @@ mariadb:
     ## @param mariadb.auth.database Database name to create
     ## ref: https://github.com/bitnami/containers/blob/main/bitnami/mariadb/README.md#creating-a-database-on-first-run
     ##
-    database: bitnami_mediawiki
+    database: bitnami_opencart
     ## @param mariadb.auth.username Database user to create
     ## ref: https://github.com/bitnami/containers/blob/main/bitnami/mariadb/README.md#creating-a-database-user-on-first-run
     ##
-    username: bn_mediawiki
+    username: bn_opencart
     ## @param mariadb.auth.password Password for the database
     ##
     password: ""
   primary:
     ## Enable persistence using Persistent Volume Claims
     ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
-    ## @param mariadb.primary.persistence.enabled Enable database persistence using PVC
-    ## @param mariadb.primary.persistence.storageClass PVC Storage Class
-    ## @param mariadb.primary.persistence.accessModes Persistent Volume Access Mode
-    ## @param mariadb.primary.persistence.size Database Persistent Volume Size
-    ## @param mariadb.primary.persistence.hostPath Host mount path for MariaDB volume
-    ## @param mariadb.primary.persistence.existingClaim Enable persistence using an existing PVC
     ##
     persistence:
+      ## @param mariadb.primary.persistence.enabled Enable database persistence using PVC
+      ##
       enabled: true
-      ## mariadb data Persistent Volume Storage Class
+      ## @param mariadb.primary.persistence.storageClass MariaDB primary persistent volume storage Class
       ## If defined, storageClassName: <storageClass>
       ## If set to "-", storageClassName: "", which disables dynamic provisioning
       ## If undefined (the default) or set to null, no storageClassName spec is
@@ -611,23 +580,22 @@ mariadb:
       ##   GKE, AWS & OpenStack)
       ##
       storageClass: ""
+      ## @param mariadb.primary.persistence.accessModes Database Persistent Volume Access Modes
+      ##
       accessModes:
         - ReadWriteOnce
+      ## @param mariadb.primary.persistence.size Database Persistent Volume Size
+      ##
       size: 8Gi
-      ## Set path in case you want to use local host path volumes (not recommended in production)
+      ## @param mariadb.primary.persistence.hostPath Set path in case you want to use local host path volumes (not recommended in production)
       ##
       hostPath: ""
-      ## Use an existing PVC
+      ## @param mariadb.primary.persistence.existingClaim Name of an existing `PersistentVolumeClaim` for MariaDB primary replicas
       ##
       existingClaim: ""
 ## External database configuration
 ##
 externalDatabase:
-  ## @param externalDatabase.existingSecret Use existing secret (ignores previous password)
-  ## Must contain key `mariadb-password`
-  ## NOTE: When it's set, the `externalDatabase.password` parameter is ignored
-  ##
-  existingSecret: ""
   ## @param externalDatabase.host Host of the existing database
   ##
   host: ""
@@ -636,13 +604,67 @@ externalDatabase:
   port: 3306
   ## @param externalDatabase.user Existing username in the external db
   ##
-  user: bn_mediawiki
+  user: bn_opencart
   ## @param externalDatabase.password Password for the above username
   ##
   password: ""
   ## @param externalDatabase.database Name of the existing database
   ##
-  database: bitnami_mediawiki
+  database: bitnami_opencart
+  ## @param externalDatabase.existingSecret Name of an existing secret resource containing the DB password
+  ##
+  existingSecret: ""
+
+## @section Volume Permissions parameters
+
+## Init containers parameters:
+## volumePermissions: Change the owner and group of the persistent volume mountpoint to runAsUser:fsGroup values from the securityContext section.
+##
+volumePermissions:
+  ## @param volumePermissions.enabled Enable init container that changes volume permissions in the data directory (for cases where the default k8s `runAsUser` and `fsUser` values do not work)
+  ##
+  enabled: false
+  ## @param volumePermissions.image.registry Init container volume-permissions image registry
+  ## @param volumePermissions.image.repository Init container volume-permissions image repository
+  ## @param volumePermissions.image.tag Init container volume-permissions image tag (immutable tags are recommended)
+  ## @param volumePermissions.image.digest Init container volume-permissions image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+  ## @param volumePermissions.image.pullPolicy Init container volume-permissions image pull policy
+  ## @param volumePermissions.image.pullSecrets Specify docker-registry secret names as an array
+  ##
+  image:
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 11-debian-11-r111
+    digest: ""
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+  ## Init containers' resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## We usually recommend not to specify default resources and to leave this as a conscious
+  ## choice for the user. This also increases chances charts run on environments with little
+  ## resources, such as Minikube. If you do want to specify resources, uncomment the following
+  ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  ## @param volumePermissions.resources.limits The resources limits for the container
+  ## @param volumePermissions.resources.requests The requested resources for the container
+  ##
+  resources:
+    ## Example:
+    ## limits:
+    ##    cpu: 100m
+    ##    memory: 128Mi
+    limits: {}
+    ## Examples:
+    ## requests:
+    ##    cpu: 100m
+    ##    memory: 128Mi
+    requests: {}
 
 ## @section Metrics parameters
 
@@ -662,69 +684,93 @@ metrics:
   image:
     registry: docker.io
     repository: bitnami/apache-exporter
-    tag: 0.13.3-debian-11-r1
+    tag: 0.13.3-debian-11-r2
     digest: ""
     pullPolicy: IfNotPresent
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    ## e.g:
+    ## Example:
     ## pullSecrets:
     ##   - myRegistryKeySecretName
     ##
     pullSecrets: []
-  ## @param metrics.resources Exporter resource requests/limit
+  ## @param metrics.resources Metrics exporter resource requests and limits
   ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources: {}
-  ## Metrics exporter pod Annotation and Labels
-  ##
-  ## @param metrics.port Metrics service port
-  ##
-  port: 9117
-  ## @param metrics.podAnnotations [object] Additional annotations for Metrics exporter pod
+  ## @param metrics.podAnnotations [object] Metrics exporter pod Annotation and Labels
   ##
   podAnnotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ .Values.metrics.port }}"
-  ## Prometheus Service Monitor
-  ## ref: https://github.com/coreos/prometheus-operator
-  ##      https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+    prometheus.io/port: "9117"
+
+## @section Certificate injection parameters
+
+## Add custom certificates and certificate authorities to OpenCart container
+##
+certificates:
+  ## @param certificates.customCertificate.certificateSecret Secret containing the certificate and key to add
+  ## @param certificates.customCertificate.chainSecret.name Name of the secret containing the certificate chain
+  ## @param certificates.customCertificate.chainSecret.key Key of the certificate chain file inside the secret
+  ## @param certificates.customCertificate.certificateLocation Location in the container to store the certificate
+  ## @param certificates.customCertificate.keyLocation Location in the container to store the private key
+  ## @param certificates.customCertificate.chainLocation Location in the container to store the certificate chain
   ##
-  serviceMonitor:
-    ## @param metrics.serviceMonitor.enabled Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
+  customCertificate:
+    certificateSecret: ""
+    chainSecret:
+      name: ""
+      key: ""
+    certificateLocation: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    keyLocation: /etc/ssl/private/ssl-cert-snakeoil.key
+    chainLocation: /etc/ssl/certs/mychain.pem
+  ## @param certificates.customCAs Defines a list of secrets to import into the container trust store
+  ##
+  customCAs: []
+  ## @param certificates.command Override default container command (useful when using custom images)
+  ##
+  command: []
+  ## @param certificates.args Override default container args (useful when using custom images)
+  ## e.g:
+  ## - secret: custom-CA
+  ## - secret: more-custom-CAs
+  ##
+  args: []
+  ## @param certificates.extraEnvVars Container sidecar extra environment variables
+  ##
+  extraEnvVars: []
+  ## @param certificates.extraEnvVarsCM ConfigMap with extra environment variables
+  ##
+  extraEnvVarsCM: ""
+  ## @param certificates.extraEnvVarsSecret Secret with extra environment variables
+  ##
+  extraEnvVarsSecret: ""
+  ## @param certificates.image.registry Container sidecar registry
+  ## @param certificates.image.repository Container sidecar image repository
+  ## @param certificates.image.tag Container sidecar image tag (immutable tags are recommended)
+  ## @param certificates.image.digest Container sidecar image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+  ## @param certificates.image.pullPolicy Container sidecar image pull policy
+  ## @param certificates.image.pullSecrets Container sidecar image pull secrets
+  ##
+  image:
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 11-debian-11-r111
+    digest: ""
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
     ##
-    enabled: true
-    ## @param metrics.serviceMonitor.namespace The namespace in which the ServiceMonitor will be created
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
     ##
-    namespace: ""
-    ## @param metrics.serviceMonitor.interval The interval at which metrics should be scraped
-    ##
-    interval: 30s
-    ## @param metrics.serviceMonitor.scrapeTimeout The timeout after which the scrape is ended
-    ##
-    scrapeTimeout: ""
-    ## @param metrics.serviceMonitor.relabelings RelabelConfigs to apply to samples before scraping
-    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
-    ##
-    relabelings: []
-    ## @param metrics.serviceMonitor.metricRelabelings MetricRelabelConfigs to apply to samples before ingestion
-    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
-    ##
-    metricRelabelings: []
-    ## @param metrics.serviceMonitor.selector ServiceMonitor selector labels
-    ## ref: https://github.com/bitnami/charts/tree/main/bitnami/prometheus-operator#prometheus-configuration
-    ##
-    ## selector:
-    ##   prometheus: my-prometheus
-    ##
-    selector: {}
-    ## @param metrics.serviceMonitor.labels Extra labels for the ServiceMonitor
-    ##
-    labels: {}
-    ## @param metrics.serviceMonitor.honorLabels honorLabels chooses the metric's labels on collisions with target labels
-    ##
-    honorLabels: false
+    pullSecrets: []
 
 ## @section NetworkPolicy parameters
 
@@ -767,15 +813,15 @@ networkPolicy:
     ##   label: ingress
     ##
     namespaceSelector: {}
-  ## @param networkPolicy.ingressRules.backendOnlyAccessibleByFrontend Enable ingress rule that makes the backend (mariadb) only accessible by MediaWiki's pods.
+  ## @param networkPolicy.ingressRules.backendOnlyAccessibleByFrontend Enable ingress rule that makes the backend (mariadb) only accessible by OpenCart's pods.
   ## @param networkPolicy.ingressRules.customBackendSelector Backend selector labels. These labels will be used to identify the backend pods.
-  ## @param networkPolicy.ingressRules.accessOnlyFrom.enabled Enable ingress rule that makes MediaWiki only accessible from a particular origin
-  ## @param networkPolicy.ingressRules.accessOnlyFrom.namespaceSelector Namespace selector label that is allowed to access MediaWiki. This label will be used to identified the allowed namespace(s).
-  ## @param networkPolicy.ingressRules.accessOnlyFrom.podSelector Pods selector label that is allowed to access MediaWiki. This label will be used to identified the allowed pod(s).
+  ## @param networkPolicy.ingressRules.accessOnlyFrom.enabled Enable ingress rule that makes OpenCart only accessible from a particular origin
+  ## @param networkPolicy.ingressRules.accessOnlyFrom.namespaceSelector Namespace selector label that is allowed to access OpenCart. This label will be used to identified the allowed namespace(s).
+  ## @param networkPolicy.ingressRules.accessOnlyFrom.podSelector Pods selector label that is allowed to access OpenCart. This label will be used to identified the allowed pod(s).
   ## @param networkPolicy.ingressRules.customRules Custom network policy ingress rule
   ##
   ingressRules:
-    ## mariadb backend only can be accessed from MediaWiki
+    ## mariadb backend only can be accessed from OpenCart
     ##
     backendOnlyAccessibleByFrontend: false
     customBackendSelector: {}

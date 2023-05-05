@@ -1,9 +1,9 @@
-{{- if and (include "mediawiki.host" .) (or .Values.mariadb.enabled .Values.externalDatabase.host) -}}
+{{- if include "opencart.host" . -}}
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   name: {{ template "common.names.fullname" . }}
-  namespace: {{ .Release.Namespace | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -14,31 +14,33 @@ metadata:
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
-  strategy: {{- include "common.tplvalues.render" (dict "value" .Values.updateStrategy "context" $ ) | nindent 4 }}
+  {{- if .Values.updateStrategy }}
+  strategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels: {{- include "common.labels.standard" . | nindent 8 }}
+        {{- if .Values.commonLabels }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
         {{- if .Values.podLabels }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
         {{- end }}
-      {{- if or .Values.podAnnotations .Values.metrics.enabled }}
       annotations:
         {{- if .Values.podAnnotations }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
         {{- if .Values.metrics.podAnnotations }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.metrics.podAnnotations "context" $) | nindent 8 }}
+        {{- toYaml .Values.metrics.podAnnotations | nindent 8 }}
         {{- end }}
-      {{- end }}
     spec:
-      {{- include "mediawiki.imagePullSecrets" . | nindent 6 }}
-      {{- if .Values.hostAliases }}
-      # yamllint disable rule:indentation
-      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
-      # yamllint enable rule:indentation
+      {{- include "opencart.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
       {{- end }}
       {{- if .Values.affinity }}
-      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.affinity "context" $) | nindent 8 }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
       {{- else }}
       affinity:
         podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "context" $) | nindent 10 }}
@@ -53,69 +55,144 @@ spec:
       {{- end }}
       priorityClassName: {{ .Values.priorityClassName | quote }}
       {{- if .Values.nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
       {{- end }}
       {{- if .Values.tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" .) | nindent 8 }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.podSecurityContext.enabled }}
-      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- if .Values.hostAliases }}
+      # yamllint disable rule:indentation
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      # yamllint enable rule:indentation
       {{- end }}
-      {{- if .Values.initContainers }}
-      initContainers: {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
-      {{- end }}
-      containers:
-        - name: {{ template "common.names.fullname" . }}
-          image: {{ template "mediawiki.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-          {{- if .Values.containerSecurityContext.enabled }}
-          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+      initContainers:
+        {{- if .Values.initContainers }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.volumePermissions.enabled .Values.persistence.enabled }}
+        - name: volume-permissions
+          image: {{ include "opencart.volumePermissions.image" . }}
+          imagePullPolicy: {{ .Values.volumePermissions.image.pullPolicy | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p "/bitnami/opencart" "/bitnami/opencart_storage"
+              chown -R "{{ .Values.containerSecurityContext.runAsUser }}:{{ .Values.podSecurityContext.fsGroup }}" "/bitnami/opencart" "/bitnami/opencart_storage"
+          securityContext:
+            runAsUser: 0
+          {{- if .Values.volumePermissions.resources }}
+          resources: {{- toYaml .Values.volumePermissions.resources | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: opencart-data
+              mountPath: /bitnami/opencart
+              subPath: opencart
+            - name: opencart-data
+              mountPath: /bitnami/opencart_storage
+              subPath: opencart_storage
+        {{- end }}
+        {{- if .Values.certificates.customCAs }}
+        - name: certificates
+          image: {{ template "certificates.image" . }}
+          imagePullPolicy: {{ default .Values.image.pullPolicy .Values.certificates.image.pullPolicy }}
+          imagePullSecrets:
+          {{- range (default .Values.image.pullSecrets .Values.certificates.image.pullSecrets) }}
+            - name: {{ . }}
+          {{- end }}
+          command:
+          {{- if .Values.certificates.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.certificates.command "context" $) | nindent 12 }}
+          {{- else if .Values.certificates.customCertificate.certificateSecret }}
+          - sh
+          - -c
+          - install_packages ca-certificates openssl
+          {{- else }}
+          - sh
+          - -c
+          - install_packages ca-certificates openssl
+            && openssl req -new -x509 -days 3650 -nodes -sha256
+              -subj "/CN=$(hostname)" -addext "subjectAltName = DNS:$(hostname)"
+              -out  /etc/ssl/certs/ssl-cert-snakeoil.pem
+              -keyout /etc/ssl/private/ssl-cert-snakeoil.key -extensions v3_req
+          {{- end }}
+          {{- if .Values.certificates.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.certificates.args "context" $) | nindent 12 }}
+          {{- end }}
+          env: {{- include "common.tplvalues.render" (dict "value" .Values.certificates.extraEnvVars "context" $) | nindent 12 }}
+          envFrom:
+            {{- if .Values.certificates.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.certificates.extraEnvVarsCM "context" $) }}
+            {{- end }}
+            {{- if .Values.certificates.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.certificates.extraEnvVarsSecret "context" $) }}
+            {{- end }}
+          volumeMounts:
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs
+              readOnly: false
+            - name: etc-ssl-private
+              mountPath: /etc/ssl/private
+              readOnly: false
+            - name: custom-ca-certificates
+              mountPath: /usr/local/share/ca-certificates
+              readOnly: true
+        {{- end }}
+      containers:
+        - name: {{ include "common.names.fullname" . }}
+          image: {{ template "opencart.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           {{- if .Values.command }}
           command: {{- include "common.tplvalues.render" (dict "value" .Values.command "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.args }}
           args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.lifecycleHooks }}
-          lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
           env:
             - name: BITNAMI_DEBUG
               value: {{ ternary "true" "false" .Values.image.debug | quote }}
             - name: ALLOW_EMPTY_PASSWORD
-              value: {{ .Values.allowEmptyPassword | quote }}
-            - name: MARIADB_HOST
-              value: {{ include "mediawiki.databaseHost" . | quote }}
-            - name: MARIADB_PORT_NUMBER
-              value: {{ include "mediawiki.databasePort" . | quote }}
-            - name: MEDIAWIKI_DATABASE_NAME
-              value: {{ include "mediawiki.databaseName" . | quote }}
-            - name: MEDIAWIKI_DATABASE_USER
-              value: {{ include "mediawiki.databaseUser" . | quote }}
-            - name: MEDIAWIKI_DATABASE_PASSWORD
+              value: {{ ternary "yes" "no" .Values.allowEmptyPassword | quote }}
+            - name: APACHE_HTTP_PORT_NUMBER
+              value: {{ .Values.containerPorts.http | quote }}
+            - name: APACHE_HTTPS_PORT_NUMBER
+              value: {{ .Values.containerPorts.https | quote }}
+            - name: OPENCART_DATABASE_HOST
+              value: {{ include "opencart.databaseHost" . | quote }}
+            - name: OPENCART_DATABASE_PORT_NUMBER
+              value: {{ include "opencart.databasePort" . | quote }}
+            - name: OPENCART_DATABASE_NAME
+              value: {{ include "opencart.databaseName" . | quote }}
+            - name: OPENCART_DATABASE_USER
+              value: {{ include "opencart.databaseUser" . | quote }}
+            - name: OPENCART_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mediawiki.databaseSecretName" . }}
+                  name: {{ include "opencart.databaseSecretName" . }}
                   key: mariadb-password
-            {{- $port:= ( coalesce .Values.service.ports.http .Values.service.port) | toString }}
-            - name: MEDIAWIKI_HOST
-              value: "{{ include "mediawiki.host" . }}{{- if ne $port "80" }}:{{ coalesce .Values.service.ports.http .Values.service.port }}{{ end }}"
-            - name: MEDIAWIKI_USERNAME
-              value: {{ .Values.mediawikiUser | quote }}
-            - name: MEDIAWIKI_PASSWORD
+            {{- if or .Values.opencartEnableHttps (and .Values.ingress.enabled (or .Values.ingress.tls .Values.ingress.extraTls)) }}
+            - name: OPENCART_ENABLE_HTTPS
+              value: "true"
+            {{- end }}
+            - name: OPENCART_SKIP_BOOTSTRAP
+              value: {{ ternary "yes" "no" .Values.opencartSkipInstall | quote }}
+            {{- $port:= (coalesce .Values.service.ports.http .Values.service.port) | toString }}
+            - name: OPENCART_HOST
+              value: "{{ include "opencart.host" . }}{{- if ne $port "80" }}:{{ coalesce .Values.service.ports.http .Values.service.port }}{{ end }}"
+            - name: OPENCART_USERNAME
+              value: {{ .Values.opencartUsername | quote }}
+            - name: OPENCART_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mediawiki.secretName" . }}
-                  key: mediawiki-password
-            - name: MEDIAWIKI_EMAIL
-              value: {{ .Values.mediawikiEmail | quote }}
-            - name: MEDIAWIKI_WIKI_NAME
-              value: {{ .Values.mediawikiName | quote }}
-            {{- if .Values.smtpHostID }}
-            - name: SMTP_HOST_ID
-              value: {{ .Values.smtpHostID | quote }}
-            {{- end }}
+                  name: {{ include "opencart.secretName" . }}
+                  key: opencart-password
+            - name: OPENCART_EMAIL
+              value: {{ .Values.opencartEmail | quote }}
             {{- if .Values.smtpHost }}
             - name: SMTP_HOST
               value: {{ .Values.smtpHost | quote }}
@@ -132,13 +209,16 @@ spec:
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mediawiki.secretName" . }}
+                  name: {{ include "opencart.secretName" . }}
                   key: smtp-password
+            {{- end }}
+            {{- if .Values.smtpProtocol }}
+            - name: SMTP_PROTOCOL
+              value: {{ .Values.smtpProtocol | quote }}
             {{- end }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
           envFrom:
             {{- if .Values.extraEnvVarsCM }}
             - configMapRef:
@@ -148,44 +228,80 @@ spec:
             - secretRef:
                 name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
             {{- end }}
+          {{- if .Values.lifecycleHooks }}
+          lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
           {{- end }}
           ports:
             - name: http
-              containerPort: 8080
-            {{- if or .Values.service.ports.https .Values.service.httpsPort }}
+              containerPort: {{ .Values.containerPorts.http }}
             - name: https
-              containerPort: 8443
-            {{ end }}
+              containerPort: {{ .Values.containerPorts.https }}
           {{- if .Values.customStartupProbe }}
           startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
           {{- else if .Values.startupProbe.enabled }}
-          startupProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled") "context" $) | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.startupProbe.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ include "opencart.host" . | quote }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
           {{- end }}
           {{- if .Values.customLivenessProbe }}
           livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
           {{- else if .Values.livenessProbe.enabled }}
-          livenessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled") "context" $) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ include "opencart.host" . | quote }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
           {{- if .Values.customReadinessProbe }}
           readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
           {{- else if .Values.readinessProbe.enabled }}
-          readinessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled") "context" $) | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ include "opencart.host" . | quote }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           {{- end }}
           {{- if .Values.resources }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: /bitnami/mediawiki
-              name: mediawiki-data
-              subPath: mediawiki
+            - name: opencart-data
+              mountPath: /bitnami/opencart
+              subPath: opencart
+            - name: opencart-data
+              mountPath: /bitnami/opencart_storage
+              subPath: opencart_storage
             {{- if .Values.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
         {{- if .Values.metrics.enabled }}
         - name: metrics
-          image: {{ template "mediawiki.metrics.image" . }}
+          image: {{ template "opencart.metrics.image" . }}
           imagePullPolicy: {{ .Values.metrics.image.pullPolicy | quote }}
-          command: [ '/bin/apache_exporter', '--scrape_uri', 'http://status.localhost:8080/server-status/?auto']
+          command: [ '/bin/apache_exporter', '--scrape_uri', 'http://status.localhost:{{ .Values.containerPorts.http }}/server-status/?auto' ]
           ports:
             - name: metrics
               containerPort: 9117
@@ -201,22 +317,20 @@ spec:
               port: metrics
             initialDelaySeconds: 5
             timeoutSeconds: 1
-          {{- if .Values.metrics.resources }}
           resources: {{- toYaml .Values.metrics.resources | nindent 12 }}
-          {{- end }}
         {{- end }}
         {{- if .Values.sidecars }}
-        {{- include "common.tplvalues.render" ( dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
-        - name: mediawiki-data
+        - name: opencart-data
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "common.names.fullname" . }}-mediawiki{{- end }}
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-opencart" (include "common.names.fullname" .)) }}
           {{- else }}
           emptyDir: {}
           {{- end }}
         {{- if .Values.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
         {{- end }}
-{{- end }}
+{{- end -}}

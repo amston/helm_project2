@@ -1,21 +1,37 @@
 annotations:
-  artifacthub.io/images: |
-    - name: nexus
-      image: sonatype/nexus3:3.38.0
+  category: Wiki
+  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 3.38.0
-description: Sonatype Nexus is an open source repository manager
-home: https://github.com/curie-data-factory/helm-charts/tree/master/charts/nexus
-icon: https://help.sonatype.com/docs/files/331022/34537964/3/1564671303641/NexusRepo_Icon.png
+appVersion: 1.39.3
+dependencies:
+- condition: mariadb.enabled
+  name: mariadb
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - mediawiki-database
+  version: 12.x.x
+- name: common
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: MediaWiki is the free and open source wiki software that powers Wikipedia.
+  Used by thousands of organizations, it is extremely powerful, scalable software
+  and a feature-rich wiki implementation.
+home: https://github.com/bitnami/charts/tree/main/bitnami/mediawiki
+icon: https://bitnami.com/assets/stacks/mediawiki/img/mediawiki-stack-220x234.png
 keywords:
-- nexus
-- registry
-kubeVersion: '>= 1.14.0-0'
+- mediawiki
+- wiki
+- http
+- web
+- application
+- php
 maintainers:
-- email: armand.leopold@curie.fr
-  name: armandleopold
-name: nexus
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: mediawiki
 sources:
-- https://github.com/sonatype/nexus-public
-type: application
-version: 1.2.4
+- https://github.com/bitnami/containers/tree/main/bitnami/mediawiki
+- https://www.mediawiki.org/
+version: 15.0.1

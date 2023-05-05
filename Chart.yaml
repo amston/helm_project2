@@ -1,29 +1,31 @@
 annotations:
-  category: Infrastructure
+  category: Database
   licenses: Apache-2.0
 apiVersion: v2
-appVersion: 2.9.16
+appVersion: 15.2.0
 dependencies:
 - name: common
-  repository: https://charts.bitnami.com/bitnami
+  repository: oci://registry-1.docker.io/bitnamicharts
   tags:
   - bitnami-common
   version: 2.x.x
-description: NATS is an open source, lightweight and high-performance messaging system.
-  It is ideal for distributed systems and supports modern cloud architectures and
-  pub-sub, request-reply and queuing models.
-home: https://github.com/bitnami/charts/tree/main/bitnami/nats
-icon: https://bitnami.com/assets/stacks/nats/img/nats-stack-220x234.png
+description: PostgreSQL (Postgres) is an open source object-relational database known
+  for reliability and data integrity. ACID-compliant, it supports foreign keys, joins,
+  views, triggers and stored procedures.
+home: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+icon: https://bitnami.com/assets/stacks/postgresql/img/postgresql-stack-220x234.png
 keywords:
-- nats
-- messaging
-- addressing
-- discovery
+- postgresql
+- postgres
+- database
+- sql
+- replication
+- cluster
 maintainers:
 - name: Bitnami
   url: https://github.com/bitnami/charts
-name: nats
+name: postgresql
 sources:
-- https://github.com/bitnami/containers/tree/main/bitnami/nats
-- https://nats.io/
-version: 7.6.2
+- https://github.com/bitnami/containers/tree/main/bitnami/postgresql
+- https://www.postgresql.org/
+version: 12.4.2

@@ -16,115 +16,76 @@ Get the list of pods by executing:
 
 Access the pod you want to debug by executing
 
-  kubectl exec --namespace {{ .Release.Namespace }} -ti <NAME OF THE POD> -- bash
+  kubectl exec --namespace {{ .Release.Namespace }} -ti <NAME OF THE POD> -- /opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash
 
 In order to replicate the container startup scripts execute this command:
 
-    /opt/bitnami/scripts/nats/entrypoint.sh
+    /opt/bitnami/scripts/postgresql/entrypoint.sh /opt/bitnami/scripts/postgresql/run.sh
 
 {{- else }}
 
-{{- if or (contains .Values.service.type "LoadBalancer") (contains .Values.service.type "nodePort") }}
-{{- if not .Values.auth.enabled }}
-{{ if and (not .Values.networkPolicy.enabled) (.Values.networkPolicy.allowExternal) }}
+PostgreSQL can be accessed via port {{ include "postgresql.service.port" . }} on the following DNS names from within your cluster:
 
--------------------------------------------------------------------------------
- WARNING
+    {{ include "postgresql.primary.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local - Read/Write connection
 
-    By specifying "service.type=NodePort/LoadBalancer" and "auth.enabled=false"
-    you have most likely exposed the NATS service externally without any authentication
-    mechanism.
+{{- if eq .Values.architecture "replication" }}
 
-    For security reasons, we strongly suggest that you switch to "ClusterIP". As
-    alternative, you can also switch to "auth.enabled=true" providing a valid
-    password on "auth.password" parameter.
-
--------------------------------------------------------------------------------
-{{- end }}
-{{- end }}
-{{- end }}
-
-NATS can be accessed via port {{ .Values.service.ports.client }} on the following DNS name from within your cluster:
-
-   {{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
-
-{{- if .Values.auth.enabled }}
-
-To get the authentication credentials, run:
-
-    export NATS_USER=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} -o jsonpath='{.data.*}' | base64 -d | grep -m 1 user | awk '{print $2}' | tr -d '"')
-    export NATS_PASS=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} -o jsonpath='{.data.*}' | base64 -d | grep -m 1 password | awk '{print $2}' | tr -d '"')
-    echo -e "Client credentials:\n\tUser: $NATS_USER\n\tPassword: $NATS_PASS"
+    {{ include "postgresql.readReplica.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local - Read only connection
 
 {{- end }}
 
-NATS monitoring service can be accessed via port {{ .Values.service.ports.monitoring }} on the following DNS name from within your cluster:
+{{- $customUser := include "postgresql.username" . }}
+{{- if and (not (empty $customUser)) (ne $customUser "postgres") .Values.auth.enablePostgresUser }}
 
-    {{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+To get the password for "postgres" run:
 
-You can create a Golang pod to be used as a NATS client:
+    export POSTGRES_ADMIN_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgresql.secretName" . }} -o jsonpath="{.data.{{include "postgresql.adminPasswordKey" .}}}" | base64 -d)
 
-      kubectl run {{ include "common.names.fullname" . }}-client --restart='Never' --env="NATS_USER=$NATS_USER" --env="NATS_PASS=$NATS_PASS" --image docker.io/bitnami/golang --namespace {{ .Release.Namespace }} --command -- sleep infinity
-      kubectl exec --tty -i {{ include "common.names.fullname" . }}-client --namespace {{ .Release.Namespace }} -- bash
-      GO111MODULE=off go get github.com/nats-io/nats.go
-      cd $GOPATH/src/github.com/nats-io/nats.go/examples/nats-pub && go install && cd
-      cd $GOPATH/src/github.com/nats-io/nats.go/examples/nats-echo && go install && cd
-      {{- if .Values.auth.enabled }}
-      nats-echo -s nats://$NATS_USER:$NATS_PASS@{{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ports.client }} SomeSubject
-      nats-pub -s nats://$NATS_USER:$NATS_PASS@{{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ports.client }} -reply Hi SomeSubject "Hi everyone"
-      {{- else }}
-      nats-echo -s nats://{{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ports.client }} SomeSubject
-      nats-pub -s nats://{{ include "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ports.client }} -reply Hi SomeSubject "Hi everyone"
-      {{- end }}
+To get the password for "{{ $customUser }}" run:
 
-To access the Monitoring svc from outside the cluster, follow the steps below:
-
-{{- if .Values.ingress.enabled }}
-
-1. Get the hostname indicated on the Ingress Rule and associate it to your cluster external IP:
-
-    export CLUSTER_IP=$(minikube ip) # On Minikube. Use: `kubectl cluster-info` on others K8s clusters
-    echo "Monitoring URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}"
-    echo "$CLUSTER_IP  {{ .Values.ingress.hostname }}" | sudo tee -a /etc/hosts
+    export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgresql.secretName" . }} -o jsonpath="{.data.{{include "postgresql.userPasswordKey" .}}}" | base64 -d)
 
 {{- else }}
 
-1. Get the NATS monitoring URL by running:
+To get the password for "{{ default "postgres" $customUser }}" run:
 
-{{- if contains "NodePort" .Values.service.type }}
+    export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgresql.secretName" . }} -o jsonpath="{.data.{{ ternary "password" (include "postgresql.adminPasswordKey" .)  (and (not (empty $customUser)) (ne $customUser "postgres")) }}}" | base64 -d)
+
+{{- end }}
+
+To connect to your database run the following command:
+
+    kubectl run {{ include "common.names.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ .Release.Namespace }} --image {{ include "postgresql.image" . }} --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+      --command -- psql --host {{ include "postgresql.primary.fullname" . }} -U {{ default "postgres" $customUser }} -d {{- if include "postgresql.database" . }} {{ include "postgresql.database" . }}{{- else }} postgres{{- end }} -p {{ include "postgresql.service.port" . }}
+
+    > NOTE: If you access the container using bash, make sure that you execute "/opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash" in order to avoid the error "psql: local user with ID {{ .Values.primary.containerSecurityContext.runAsUser }}} does not exist"
+
+To connect to your database from outside the cluster execute the following commands:
+
+{{- if contains "NodePort" .Values.primary.service.type }}
 
     export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "common.names.fullname" . }})
-    echo "Monitoring URL: http://$NODE_IP:$NODE_PORT/"
+    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "postgresql.primary.fullname" . }})
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host $NODE_IP --port $NODE_PORT -U {{ default "postgres" $customUser }} -d {{- if include "postgresql.database" . }} {{ include "postgresql.database" . }}{{- else }} postgres{{- end }}
 
-{{- else if contains "LoadBalancer" .Values.service.type }}
+{{- else if contains "LoadBalancer" .Values.primary.service.type }}
 
-    NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "common.names.fullname" . }}'
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "postgresql.primary.fullname" . }}'
 
-    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
-    echo "Monitoring URL: http://$SERVICE_IP/"
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "postgresql.primary.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host $SERVICE_IP --port {{ include "postgresql.service.port" . }} -U {{ default "postgres" $customUser }} -d {{- if include "postgresql.database" . }} {{ include "postgresql.database" . }}{{- else }} postgres{{- end }}
 
-{{- else if contains "ClusterIP" .Values.service.type }}
+{{- else if contains "ClusterIP" .Values.primary.service.type }}
 
-    echo "Monitoring URL: http://127.0.0.1:{{ .Values.service.ports.monitoring }}"
-    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }} {{ .Values.service.ports.monitoring }}:{{ .Values.service.ports.monitoring }}
-{{- end }}
-{{- end }}
-
-2. Open a browser and access the NATS monitoring browsing to the Monitoring URL
-{{- if .Values.metrics.enabled }}
-
-3. Get the NATS Prometheus Metrics URL by running:
-
-    echo "Prometheus Metrics URL: http://127.0.0.1:{{ .Values.metrics.service.port }}/metrics"
-    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ printf "%s-metrics" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" }} {{ .Values.metrics.service.port }}:{{ .Values.metrics.service.port }}
-
-4. Access NATS Prometheus metrics by opening the URL obtained in a browser.
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "postgresql.primary.fullname" . }} {{ include "postgresql.service.port" . }}:{{ include "postgresql.service.port" . }} &
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U {{ default "postgres" $customUser }} -d {{- if include "postgresql.database" . }} {{ include "postgresql.database" . }}{{- else }} postgres{{- end }} -p {{ include "postgresql.service.port" . }}
 
 {{- end }}
 {{- end }}
 
-{{- include "common.warnings.rollingTag" .Values.image }}
-{{- include "common.warnings.rollingTag" .Values.metrics.image }}
-{{- include "nats.validateValues" . -}}
+WARNING: The configured password will be ignored on new installation in case when previous Posgresql release was deleted through the helm command. In that case, old PVC will have an old password, and setting it through helm won't take effect. Deleting persistent volumes (PVs) will solve the issue.
+
+{{- include "postgresql.validateValues" . -}}
+{{- include "common.warnings.rollingTag" .Values.image -}}
+{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}

@@ -1,19 +1,29 @@
+annotations:
+  category: Infrastructure
+  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 1.2.1
-description: A realtime distributed messaging platform
-home: https://github.com/beeinventor/charts/tree/master/beeinventor/nsq
-icon: https://nsq.io/static/img/nsq_blue.png
+appVersion: 2.9.16
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: NATS is an open source, lightweight and high-performance messaging system.
+  It is ideal for distributed systems and supports modern cloud architectures and
+  pub-sub, request-reply and queuing models.
+home: https://github.com/bitnami/charts/tree/main/bitnami/nats
+icon: https://bitnami.com/assets/stacks/nats/img/nats-stack-220x234.png
 keywords:
-- nsq
-- nsqd
-- nsqlookupd
-- nsqadmin
+- nats
+- messaging
+- addressing
+- discovery
 maintainers:
-- email: benhu@beeinventor.com
-  name: BeeInventor
-name: nsq
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: nats
 sources:
-- https://github.com/beeinventor/charts/tree/master/beeinventor/nsq
-- https://nsq.io/
-type: application
-version: 1.2.2
+- https://github.com/bitnami/containers/tree/main/bitnami/nats
+- https://nats.io/
+version: 7.6.2

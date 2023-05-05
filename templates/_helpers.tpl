@@ -1,78 +1,83 @@
-{{/*
-nsq fullname
-*/}}
-{{- define "nsq.fullname" -}}
-{{- default .Chart.Name .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- end }}
+{{/* vim: set filetype=mustache: */}}
 
 {{/*
-Chart name
+Return the proper Nats image name
 */}}
-{{- define "nsq.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- define "nats.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+{{- end -}}
 
 {{/*
-nsqlookupd fullname
+Return the proper image name (for the metrics image)
 */}}
-{{- define "nsq.nsqlookupd.fullname" -}}
-{{- if .Values.nsqlookupd.fullnameOverride -}}
-{{- .Values.nsqlookupd.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- define "nats.metrics.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.metrics.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
+Return the proper Docker Image Registry Secret Names
+*/}}
+{{- define "nats.imagePullSecrets" -}}
+{{- include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.metrics.image) "global" .Values.global) -}}
+{{- end -}}
+
+{{/*
+Create a random alphanumeric password string.
+We prepend a random letter to the string to avoid password validation errors
+*/}}
+{{- define "nats.randomPassword" -}}
+{{- randAlpha 1 -}}{{- randAlphaNum 9 -}}
+{{- end -}}
+
+{{/*
+Return true if a NATS configuration secret object should be created
+*/}}
+{{- define "nats.createSecret" -}}
+{{- if and .Values.configuration (not .Values.existingSecret) }}
+    {{- true -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the NATS configuration secret name
+*/}}
+{{- define "nats.secretName" -}}
+{{- if .Values.existingSecret }}
+    {{- printf "%s" (tpl .Values.existingSecret .) -}}
 {{- else -}}
-{{- printf "%s-%s" .Release.Name "nsqlookupd" -}}
-{{- end }}
-{{- end }}
+    {{- printf "%s" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
-nsqadmin fullname
+Compile all warnings into a single message, and call fail.
 */}}
-{{- define "nsq.nsqadmin.fullname" -}}
-{{- if .Values.nsqadmin.fullnameOverride -}}
-{{- .Values.nsqadmin.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name "nsqadmin" -}}
-{{- end }}
-{{- end }}
+{{- define "nats.validateValues" -}}
+{{- $messages := list -}}
+{{- $messages := append $messages (include "nats.validateValues.resourceType" .) -}}
+{{- $messages := append $messages (include "nats.validateValues.jetstream" .) -}}
+{{- $messages := without $messages "" -}}
+{{- $message := join "\n" $messages -}}
 
-{{/*
-nsqd fullname
-*/}}
-{{- define "nsq.nsqd.fullname" -}}
-{{- if .Values.nsqd.fullnameOverride -}}
-{{- .Values.nsqd.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name "nsqd" -}}
-{{- end }}
-{{- end }}
+{{- if $message -}}
+{{-   printf "\nVALUES VALIDATION:\n%s" $message | fail -}}
+{{- end -}}
+{{- end -}}
 
-{{/*
-Common labels
-*/}}
-{{- define "nsq.commonLabels" -}}
-helm.sh/chart: {{ include "nsq.chart" . }}
-helm.sh/release: {{ .Release.Name }}
-app.kubernetes.io/name: {{ include "nsq.fullname" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
+{{/* Validate values of NATS - must provide a valid resourceType ("deployment" or "statefulset") */}}
+{{- define "nats.validateValues.resourceType" -}}
+{{- if and (ne .Values.resourceType "deployment") (ne .Values.resourceType "statefulset") -}}
+nats: resourceType
+    Invalid resourceType selected. Valid values are "deployment" and
+    "statefulset". Please set a valid mode (--set resourceType="xxxx")
+{{- end -}}
+{{- end -}}
 
-{{/*
-nsqlookupd selector labels
-*/}}
-{{- define "nsq.nsqlookupd.selectorLabels" -}}
-app.kubernetes.io/component: nsqlookupd
-{{- end }}
-
-{{/*
-nsqadmin selector labels
-*/}}
-{{- define "nsq.nsqadmin.selectorLabels" -}}
-app.kubernetes.io/component: nsqadmin
-{{- end }}
-
-{{/*
-nsqd selector labels
-*/}}
-{{- define "nsq.nsqd.selectorLabels" -}}
-app.kubernetes.io/component: nsqd
-{{- end }}
+{{/* Validate values of NATS - enabling JetStream requires persistence & statefulsets */}}
+{{- define "nats.validateValues.jetstream" -}}
+{{- if and .Values.jetstream.enabled (or (ne .Values.resourceType "statefulset") (not .Values.persistence.enabled)) -}}
+nats: jetstream
+    Invalid configuration selected. Enabling jetstream requires enabling persistence
+    and using a "statefulset" (--set persistence.enabled=true,resourceType="statefulset")
+{{- end -}}
+{{- end -}}

@@ -1,63 +1,91 @@
-{{- if .Values.ingress.enabled }}
-apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "common.names.fullname" . }}
-  namespace: {{ .Release.Namespace | quote }}
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  labels:
+    app: {{ .Values.image.name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: "{{ .Values.image.name }}-docker-release"
+{{- with .Values.ingress.annotations  }}
   annotations:
-    {{- if .Values.ingress.annotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
-    {{- end }}
-    {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
-    {{- end }}
-spec:
-  {{- if and .Values.ingress.ingressClassName (eq "true" (include "common.ingress.supportsIngressClassname" .)) }}
-  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
-  {{- end }}
-  rules:
-    {{- if .Values.ingress.hostname }}
-    - host: {{ tpl .Values.ingress.hostname $ | quote }}
-      http:
-        paths:
-          {{- if .Values.ingress.extraPaths }}
-          {{- toYaml .Values.ingress.extraPaths | nindent 10 }}
-          {{- end }}
-          - path: {{ .Values.ingress.path }}
-            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
-            pathType: {{ .Values.ingress.pathType }}
-            {{- end }}
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "common.names.fullname" .) "servicePort" "http" "context" $)  | nindent 14 }}
-    {{- end }}
-    {{- range .Values.ingress.extraHosts }}
-    - host: {{ tpl .name $ | quote }}
-      http:
-        paths:
-          - path: {{ default "/" .path }}
-            {{- if eq "true" (include "common.ingress.supportsPathType" $) }}
-            pathType: {{ default "ImplementationSpecific" .pathType }}
-            {{- end }}
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "common.names.fullname" $) "servicePort" "http" "context" $) | nindent 14 }}
-    {{- end }}
-    {{- if .Values.ingress.extraRules }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraRules "context" $) | nindent 4 }}
-    {{- end }}
-  {{- if or (and .Values.ingress.tls (or (include "common.ingress.certManagerRequest" ( dict "annotations" .Values.ingress.annotations )) .Values.ingress.selfSigned)) .Values.ingress.extraTls }}
-  tls:
-    {{- if and .Values.ingress.tls (or (include "common.ingress.certManagerRequest" ( dict "annotations" .Values.ingress.annotations )) .Values.ingress.selfSigned) }}
-    - hosts:
-        - {{ tpl .Values.ingress.hostname $ | quote }}
-        {{- if or (.Values.ingress.tlsWwwPrefix) (eq (index .Values.ingress.annotations "nginx.ingress.kubernetes.io/from-to-www-redirect") "true" ) }}
-        - {{ printf "www.%s" (tpl .Values.ingress.hostname $) | quote }}
-        {{- end }}
-      secretName: {{ printf "%s-tls" (tpl .Values.ingress.hostname $) }}
-    {{- end }}
-    {{- if .Values.ingress.extraTls }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraTls "context" $) | nindent 4 }}
-    {{- end }}
-  {{- end }}
+{{ toYaml . | indent 4 }}
 {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.urldockerrelease }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.urlDockerReleasePath }}
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}-{{ .Values.image.name }}"
+                port:
+                  number: 8083
+  tls:
+  - hosts:
+    - {{ .Values.ingress.urldockerrelease }}
+    secretName: {{ .Values.ingress.urldockerreleasename }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: {{ .Values.image.name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: "{{ .Values.image.name }}-docker-snapshot"
+{{- with .Values.ingress.annotations  }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.urldockersnapshot }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.urlDockerSnapshotPath }}
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}-{{ .Values.image.name }}"
+                port:
+                  number: 8082
+  tls:
+  - hosts:
+    - {{ .Values.ingress.urldockersnapshot }}
+    secretName: {{ .Values.ingress.urldockersnapshotname }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: {{ .Values.image.name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: "{{ .Release.Name }}-{{ .Values.image.name }}"
+{{- with .Values.ingress.annotations  }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.ingress.tls }}
+  tls:
+{{ toYaml .Values.ingress.tls | indent 4 }}
+{{- end }}
+  rules:
+    - host: "{{ .Values.ingress.url }}"
+      http:
+        paths:
+          - path: {{ .Values.ingress.urlPath }}
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}-{{ .Values.image.name }}"
+                port:
+                  number: 8081
+{{- end -}}

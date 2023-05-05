@@ -1,26 +1,40 @@
 annotations:
-  truecharts.org/SCALE-support: "true"
-  truecharts.org/catagories: |
-    - utilities
+  category: CMS
+  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 1.38.1
+appVersion: 6.2.0
 dependencies:
+- condition: memcached.enabled
+  name: memcached
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 6.x.x
+- condition: mariadb.enabled
+  name: mariadb
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 12.x.x
 - name: common
-  repository: https://library-charts.truecharts.org
-  version: 12.6.4
-description: Netdata is high-fidelity infrastructure monitoring and troubleshooting.
-home: https://truecharts.org/charts/stable/netdata
-icon: https://truecharts.org/img/hotlink-ok/chart-icons/netdata.png
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: WordPress is the world's most popular blogging and content management
+  platform. Powerful yet simple, everyone from students to global corporations use
+  it to build beautiful, functional websites.
+home: https://github.com/bitnami/charts/tree/main/bitnami/wordpress
+icon: https://bitnami.com/assets/stacks/wordpress/img/wordpress-stack-220x234.png
 keywords:
-- netdata
-- monitoring
-kubeVersion: '>=1.16.0-0'
+- application
+- blog
+- cms
+- http
+- php
+- web
+- wordpress
 maintainers:
-- email: info@truecharts.org
-  name: TrueCharts
-  url: https://truecharts.org
-name: netdata
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: wordpress
 sources:
-- https://github.com/truecharts/charts/tree/master/charts/stable/netdata
-- https://github.com/netdata
-version: 5.0.10
+- https://github.com/bitnami/containers/tree/main/bitnami/wordpress
+- https://wordpress.org/
+version: 16.0.4

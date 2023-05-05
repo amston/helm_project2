@@ -1,55 +1,50 @@
-1. Get your '{{ .Values.adminUser }}' user password by running:
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
 
-   kubectl get secret --namespace {{ include "grafana.namespace" . }} {{ .Values.admin.existingSecret | default (include "grafana.fullname" .) }} -o jsonpath="{.data.{{ .Values.admin.passwordKey | default "admin-password" }}}" | base64 --decode ; echo
+** Please be patient while the chart is being deployed **
 
+1. Get the Apache URL by running:
 
-2. The Grafana server can be accessed via port {{ .Values.service.port }} on the following DNS name from within your cluster:
+{{- if .Values.ingress.enabled }}
 
-   {{ include "grafana.fullname" . }}.{{ include "grafana.namespace" . }}.svc.cluster.local
-{{ if .Values.ingress.enabled }}
-   If you bind grafana to 80, please update values in values.yaml and reinstall:
-   ```
-   securityContext:
-     runAsUser: 0
-     runAsGroup: 0
-     fsGroup: 0
+  You should be able to access your new Apache installation through:
 
-   command:
-   - "setcap"
-   - "'cap_net_bind_service=+ep'"
-   - "/usr/sbin/grafana-server &&"
-   - "sh"
-   - "/run.sh"
-   ```
-   Details refer to https://grafana.com/docs/installation/configuration/#http-port.
-   Or grafana would always crash.
+  {{- if .Values.ingress.hostname }}
+      - http://{{ .Values.ingress.hostname }}
+  {{- end }}
+  {{- range $host := .Values.ingress.hosts }}
+    {{- range .paths }}
+      - http://{{ $host.name }}{{ . }}
+    {{- end }}
+  {{- end }}
 
-   From outside the cluster, the server URL(s) are:
-     {{- range .Values.ingress.hosts }}
-     http://{{ . }}
-     {{- end }}
-{{- else }}
-   Get the Grafana URL to visit by running these commands in the same shell:
-   {{- if contains "NodePort" .Values.service.type }}
-     export NODE_PORT=$(kubectl get --namespace {{ include "grafana.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "grafana.fullname" . }})
-     export NODE_IP=$(kubectl get nodes --namespace {{ include "grafana.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")
-     echo http://$NODE_IP:$NODE_PORT
-   {{- else if contains "LoadBalancer" .Values.service.type }}
-   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ include "grafana.namespace" . }} -w {{ include "grafana.fullname" . }}'
-     export SERVICE_IP=$(kubectl get svc --namespace {{ include "grafana.namespace" . }} {{ include "grafana.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-     http://$SERVICE_IP:{{ .Values.service.port -}}
-   {{- else if contains "ClusterIP"  .Values.service.type }}
-     export POD_NAME=$(kubectl get pods --namespace {{ include "grafana.namespace" . }} -l "app.kubernetes.io/name={{ include "grafana.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-     kubectl --namespace {{ include "grafana.namespace" . }} port-forward $POD_NAME 3000
-   {{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "common.names.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT/
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+** Please ensure an external IP is associated to the {{ template "common.names.fullname" . }} service before proceeding **
+** Watch the status using: kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "common.names.fullname" . }} **
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+{{- $port:=(coalesce .Values.service.ports.http .Values.service.port) | toString }}
+  echo URL            : http://$SERVICE_IP{{- if ne $port "80" }}:{{ coalesce .Values.service.ports.http .Values.service.port }}{{ end }}/
+{{- else if contains "ClusterIP"  .Values.service.type }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ template "common.names.fullname" . }} 8080:{{ coalesce .Values.service.ports.http .Values.service.port}}
+  echo URL            : http://127.0.0.1:8080/
 {{- end }}
 
-3. Login with the password from step 1 and the username: {{ .Values.adminUser }}
-
-{{- if not .Values.persistence.enabled }}
-#################################################################################
-######   WARNING: Persistence is disabled!!! You will lose your data when   #####
-######            the Grafana pod is terminated.                            #####
-#################################################################################
+{{/* WARNINGS */}}
+{{- if not (include "apache.useHtdocs" .) }}
+WARNING: You did not provide a custom web application. Apache will be deployed with a default page. Check the README section "Deploying your custom web application" in https://github.com/bitnami/charts/blob/main/bitnami/apache/README.md#deploying-a-custom-web-application.
 {{- end }}
+{{- if and (contains "bitnami/" .Values.image.repository) (not (.Values.image.tag | toString | regexFind "-r\\d+$|sha256:")) }}
+WARNING: Rolling tag detected ({{ .Values.image.repository }}:{{ .Values.image.tag }}), please note that it is strongly recommended to avoid using rolling tags in a production environment.
++info https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/
+{{- end }}
+
+{{ include "apache.validateValues" . }}

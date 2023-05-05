@@ -1,22 +1,31 @@
+annotations:
+  category: Infrastructure
+  licenses: Apache-2.0
 apiVersion: v2
-appVersion: 9.5.1
-description: The leading tool for querying and visualizing time series and metrics.
-home: https://grafana.net
-icon: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
-kubeVersion: ^1.8.0-0
+appVersion: 2.4.57
+dependencies:
+- name: common
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: Apache HTTP Server is an open-source HTTP server. The goal of this project
+  is to provide a secure, efficient and extensible server that provides HTTP services
+  in sync with the current HTTP standards.
+home: https://github.com/bitnami/charts/tree/main/bitnami/apache
+icon: https://bitnami.com/assets/stacks/apache/img/apache-stack-220x234.png
+keywords:
+- apache
+- http
+- https
+- www
+- web
+- reverse proxy
 maintainers:
-- email: zanhsieh@gmail.com
-  name: zanhsieh
-- email: rluckie@cisco.com
-  name: rtluckie
-- email: maor.friedman@redhat.com
-  name: maorfr
-- email: miroslav.hadzhiev@gmail.com
-  name: Xtigyro
-- email: mail@torstenwalter.de
-  name: torstenwalter
-name: grafana
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: apache
 sources:
-- https://github.com/grafana/grafana
-type: application
-version: 6.56.1
+- https://github.com/bitnami/containers/tree/main/bitnami/apache
+- https://httpd.apache.org
+version: 9.5.2

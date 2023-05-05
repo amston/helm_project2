@@ -1,201 +1,130 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
-Expand the name of the chart.
+Return the proper Apache image name
 */}}
-{{- define "grafana.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- define "apache.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
+{{- end -}}
 
 {{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
+Return the proper Apache Docker Image Registry Secret Names
 */}}
-{{- define "grafana.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- define "apache.imagePullSecrets" -}}
+{{- include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.metrics.image) "global" .Values.global) -}}
+{{- end -}}
+
+{{/*
+Return the proper image name (for the metrics image)
+*/}}
+{{- define "apache.metrics.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.metrics.image "global" .Values.global) -}}
+{{- end -}}
+
+{{/*
+Return true if mouting a static web page
+*/}}
+{{- define "apache.useHtdocs" -}}
+{{ default "" (or .Values.cloneHtdocsFromGit.enabled .Values.htdocsConfigMap .Values.htdocsPVC) }}
+{{- end -}}
+
+{{/*
+Return associated volume
+*/}}
+{{- define "apache.htdocsVolume" -}}
+{{- if .Values.cloneHtdocsFromGit.enabled }}
+emptyDir: {}
+{{- else if .Values.htdocsConfigMap }}
+configMap:
+  name: {{ .Values.htdocsConfigMap }}
+{{- else if .Values.htdocsPVC }}
+persistentVolumeClaim:
+  claimName: {{ .Values.htdocsPVC }}
 {{- end }}
-{{- end }}
-{{- end }}
+{{- end -}}
+
+{{/*
+Validate data
+*/}}
+{{- define "apache.validateValues" -}}
+{{- $messages := list -}}
+{{- $messages := append $messages (include "apache.validateValues.htdocs" .) -}}
+{{- $messages := append $messages (include "apache.validateValues.htdocsGit" .) -}}
+{{- $messages := without $messages "" -}}
+{{- $message := join "\n" $messages -}}
+ {{- if $message -}}
+{{-   printf "\nVALUES VALIDATION:\n%s" $message | fail -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "grafana.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- define "apache.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 
 {{/*
-Create the name of the service account
+Validate data (htdocs)
 */}}
-{{- define "grafana.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "grafana.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- define "apache.validateValues.htdocs" -}}
+{{- if or (and .Values.cloneHtdocsFromGit.enabled (or .Values.htdocsPVC .htdocsConfigMap )) (and .Values.htdocsPVC (or .Values.htdocsConfigMap .Values.cloneHtdocsFromGit.enabled )) (and .Values.htdocsConfigMap (or .Values.htdocsPVC .Values.cloneHtdocsFromGit.enabled )) }}
+apache: htdocs
+    You have selected more than one way of deploying htdocs. Please select only one of htdocsConfigMap cloneHtdocsFromGit or htdocsVolume
 {{- end }}
-{{- end }}
-
-{{- define "grafana.serviceAccountNameTest" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (print (include "grafana.fullname" .) "-test") .Values.serviceAccount.nameTest }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.nameTest }}
-{{- end }}
-{{- end }}
+{{- end -}}
 
 {{/*
-Allow the release namespace to be overridden for multi-namespace deployments in combined charts
+Validate data (htdocs git)
 */}}
-{{- define "grafana.namespace" -}}
-{{- if .Values.namespaceOverride }}
-{{- .Values.namespaceOverride }}
-{{- else }}
-{{- .Release.Namespace }}
-{{- end }}
-{{- end }}
+{{- define "apache.validateValues.htdocsGit" -}}
+{{- if .Values.cloneHtdocsFromGit.enabled }}
+  {{- if not .Values.cloneHtdocsFromGit.repository }}
+apache: htdocs-git-repository
+    You did not specify a git repository to clone. Please set cloneHtdocsFromGit.repository
+  {{- end }}
+  {{- if not .Values.cloneHtdocsFromGit.branch }}
+apache: htdocs-git-branch
+    You did not specify a branch to checkout in the git repository. Please set cloneHtdocsFromGit.branch
+  {{- end }}
+{{- end -}}
+{{- end -}}
 
 {{/*
-Common labels
+Validate values of Apache - Incorrect extra volume settings
 */}}
-{{- define "grafana.labels" -}}
-helm.sh/chart: {{ include "grafana.chart" . }}
-{{ include "grafana.selectorLabels" . }}
-{{- if or .Chart.AppVersion .Values.image.tag }}
-app.kubernetes.io/version: {{ mustRegexReplaceAllLiteral "@sha.*" .Values.image.tag "" | default .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.extraLabels }}
-{{ toYaml . }}
-{{- end }}
-{{- end }}
+{{- define "apache.validateValues.extraVolumes" -}}
+{{- if and (.Values.extraVolumes) (not (or .Values.extraVolumeMounts .Values.cloneHtdocsFromGit.extraVolumeMounts)) -}}
+apache: missing-extra-volume-mounts
+    You specified extra volumes but not mount points for them. Please set
+    the extraVolumeMounts value
+{{- end -}}
+{{- end -}}
 
 {{/*
-Selector labels
+Return the proper git image name
 */}}
-{{- define "grafana.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "grafana.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- define "git.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.git "global" .Values.global) -}}
+{{- end -}}
 
 {{/*
-Common labels
+Get the vhosts config map name.
 */}}
-{{- define "grafana.imageRenderer.labels" -}}
-helm.sh/chart: {{ include "grafana.chart" . }}
-{{ include "grafana.imageRenderer.selectorLabels" . }}
-{{- if or .Chart.AppVersion .Values.image.tag }}
-app.kubernetes.io/version: {{ mustRegexReplaceAllLiteral "@sha.*" .Values.image.tag "" | default .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
+{{- define "apache.vhostsConfigMap" -}}
+{{- if .Values.vhostsConfigMap -}}
+    {{- printf "%s" (tpl .Values.vhostsConfigMap $) -}}
+{{- else -}}
+    {{- printf "%s-vhosts" (include "common.names.fullname" . ) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
-Selector labels ImageRenderer
+Get the httpd.conf config map name.
 */}}
-{{- define "grafana.imageRenderer.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "grafana.name" . }}-image-renderer
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Looks if there's an existing secret and reuse its password. If not it generates
-new password and use it.
-*/}}
-{{- define "grafana.password" -}}
-{{- $secret := (lookup "v1" "Secret" (include "grafana.namespace" .) (include "grafana.fullname" .) ) }}
-{{- if $secret }}
-{{- index $secret "data" "admin-password" }}
-{{- else }}
-{{- (randAlphaNum 40) | b64enc | quote }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for rbac.
-*/}}
-{{- define "grafana.rbac.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" }}
-{{- else }}
-{{- print "rbac.authorization.k8s.io/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for ingress.
-*/}}
-{{- define "grafana.ingress.apiVersion" -}}
-{{- if and ($.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19-0" .Capabilities.KubeVersion.Version) }}
-{{- print "networking.k8s.io/v1" }}
-{{- else if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-{{- print "networking.k8s.io/v1beta1" }}
-{{- else }}
-{{- print "extensions/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for Horizontal Pod Autoscaler.
-*/}}
-{{- define "grafana.hpa.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "autoscaling/v2/HorizontalPodAutoscaler" }}
-{{- print "autoscaling/v2" }}
-{{- else if $.Capabilities.APIVersions.Has "autoscaling/v2beta2/HorizontalPodAutoscaler" }}
-{{- print "autoscaling/v2beta2" }}
-{{- else }}
-{{- print "autoscaling/v2beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for podDisruptionBudget.
-*/}}
-{{- define "grafana.podDisruptionBudget.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- print "policy/v1" }}
-{{- else }}
-{{- print "policy/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return if ingress is stable.
-*/}}
-{{- define "grafana.ingress.isStable" -}}
-{{- eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1" }}
-{{- end }}
-
-{{/*
-Return if ingress supports ingressClassName.
-*/}}
-{{- define "grafana.ingress.supportsIngressClassName" -}}
-{{- or (eq (include "grafana.ingress.isStable" .) "true") (and (eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" .Capabilities.KubeVersion.Version)) }}
-{{- end }}
-
-{{/*
-Return if ingress supports pathType.
-*/}}
-{{- define "grafana.ingress.supportsPathType" -}}
-{{- or (eq (include "grafana.ingress.isStable" .) "true") (and (eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" .Capabilities.KubeVersion.Version)) }}
-{{- end }}
-
-{{/*
-Formats imagePullSecrets. Input is (dict "root" . "imagePullSecrets" .{specific imagePullSecrets})
-*/}}
-{{- define "grafana.imagePullSecrets" -}}
-{{- $root := .root }}
-{{- range (concat .root.Values.global.imagePullSecrets .imagePullSecrets) }}
-{{- if eq (typeOf .) "map[string]interface {}" }}
-- {{ toYaml (dict "name" (tpl .name $root)) | trim }}
-{{- else }}
-- name: {{ tpl . $root }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- define "apache.httpdConfConfigMap" -}}
+{{- if .Values.httpdConfConfigMap -}}
+    {{- printf "%s" (tpl .Values.httpdConfConfigMap $) -}}
+{{- else -}}
+    {{- printf "%s-httpd-conf" (include "common.names.fullname" . ) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}

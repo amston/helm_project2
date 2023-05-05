@@ -1,23 +1,12 @@
-apiVersion: v2
-appVersion: 7.9.1
-dependencies:
-- condition: postgresql.enabled
-  name: postgresql
-  repository: https://charts.bitnami.com/bitnami
-  version: 11.9.8
-description: Concourse is a simple and scalable CI system.
-home: https://concourse-ci.org/
-icon: https://avatars1.githubusercontent.com/u/7809479
+apiVersion: v1
+appVersion: 3.5.6
+description: Zookeeper Service, Support single node and multi node
+home: https://zookeeper.apache.org/
+icon: https://bitnami.com/assets/stacks/zookeeper/img/zookeeper-stack-110x117.png
 keywords:
-- ci
-- concourse
-- concourse.ci
+- key-value
 maintainers:
-- email: concourse@vmware.com
-  name: concourse-team
-name: concourse
-sources:
-- https://github.com/concourse/concourse-chart
-- https://github.com/concourse/concourse
-type: application
-version: 17.1.1
+- email: support@kubegems.io
+  name: KubeGems
+name: zookeeper
+version: 5.2.0

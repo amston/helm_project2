@@ -1,25 +1,56 @@
 # Zookeeper
 
-基于bitnami zookeeper
+Base on bitnami zookeeper
 
 # ZooKeeper
 
-[ZooKeeper](https://zookeeper.apache.org/) 是用于维护配置信息、命名、提供分布式同步和提供组服务的集中服务。所有这些类型的服务都被分布式应用程序以某种形式或其他形式使用。
+[ZooKeeper](https://zookeeper.apache.org/) is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. All of these kinds of services are used in some form or other by distributed applications.
 
-## 安装
+## TL;DR;
 
 ```console
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
 $ helm install bitnami/zookeeper
 ```
 
-## 需求
+## Introduction
+
+This chart bootstraps a [ZooKeeper](https://github.com/bitnami/bitnami-docker-zookeeper) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+
+Bitnami charts can be used with [Kubeapps](https://kubeapps.com/) for deployment and management of Helm Charts in clusters. This Helm chart has been tested on top of [Bitnami Kubernetes Production Runtime](https://kubeprod.io/) (BKPR). Deploy BKPR to get automated TLS certificates, logging and monitoring for your applications.
+
+## Prerequisites
 
 - Kubernetes 1.12+
 - Helm 2.11+ or Helm 3.0-beta3+
 - PV provisioner support in the underlying infrastructure
 
-## 参数
+## Installing the Chart
+
+To install the chart with the release name `my-release`:
+
+```console
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm install --name my-release bitnami/zookeeper
+```
+
+These commands deploy ZooKeeper on the Kubernetes cluster in the default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
+
+> **Tip**: List all releases using `helm list`
+
+## Uninstalling the Chart
+
+To uninstall/delete the `my-release` deployment:
+
+```console
+$ helm delete my-release
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+## Parameters
+
+The following tables lists the configurable parameters of the ZooKeeper chart and their default values.
 
 | Parameter                              | Description                                                                                                                                               | Default                                                      |  |
 |----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|--|
@@ -127,3 +158,74 @@ $ helm install --name my-release -f values.yaml bitnami/zookeeper
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
+
+## Configuration and installation details
+
+### [Rolling VS Immutable tags](https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/)
+
+It is strongly recommended to use immutable tags in a production environment. This ensures your deployment does not change automatically if the same tag is updated with a different image.
+
+Bitnami will release a new chart updating its containers if a new version of the main container, significant changes, or critical vulnerabilities exist.
+
+### Production configuration
+
+This chart includes a `values-production.yaml` file where you can find some parameters oriented to production configuration in comparison to the regular `values.yaml`. You can use this file instead of the default one.
+
+- Number of ZooKeeper nodes:
+```diff
+- replicaCount: 1
++ replicaCount: 3
+```
+
+- Start a side-car prometheus exporter:
+```diff
+- metrics.enabled: false
++ metrics.enabled: true
+```
+
+### Log level
+
+You can configure the ZooKeeper log level using the `ZOO_LOG_LEVEL` environment variable. By default, it is set to `ERROR` because of each readiness probe produce an `INFO` message on connection and a `WARN` message on disconnection.
+
+## Persistence
+
+The [Bitnami ZooKeeper](https://github.com/bitnami/bitnami-docker-zookeeper) image stores the ZooKeeper data and configurations at the `/bitnami/zookeeper` path of the container.
+
+Persistent Volume Claims are used to keep the data across deployments. This is known to work in GCE, AWS, and minikube.
+See the [Parameters](#parameters) section to configure the PVC or to disable persistence.
+
+### Adjust permissions of persistent volume mountpoint
+
+As the image run as non-root by default, it is necessary to adjust the ownership of the persistent volume so that the container can write data into it.
+
+By default, the chart is configured to use Kubernetes Security Context to automatically change the ownership of the volume. However, this feature does not work in all Kubernetes distributions.
+As an alternative, this chart supports using an initContainer to change the ownership of the volume before mounting it in the final destination.
+
+You can enable this initContainer by setting `volumePermissions.enabled` to `true`.
+
+## Upgrading
+
+### To 3.0.0
+
+This new version of the chart includes the new ZooKeeper major version 3.5.5. Note that to perform an automatic upgrade
+of the application, each node will need to have at least one snapshot file created in the data directory. If not, the
+new version of the application won't be able to start the service. Please refer to [ZOOKEEPER-3056](https://issues.apache.org/jira/browse/ZOOKEEPER-3056)
+in order to find ways to workaround this issue in case you are facing it.
+
+### To 2.0.0
+
+Backwards compatibility is not guaranteed unless you modify the labels used on the chart's statefulsets.
+Use the workaround below to upgrade from versions previous to 2.0.0. The following example assumes that the release name is `zookeeper`:
+
+```console
+$ kubectl delete statefulset zookeeper-zookeeper --cascade=false
+```
+
+### To 1.0.0
+
+Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
+Use the workaround below to upgrade from versions previous to 1.0.0. The following example assumes that the release name is zookeeper:
+
+```console
+$ kubectl delete statefulset zookeeper-zookeeper --cascade=false
+```

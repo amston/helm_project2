@@ -1,528 +1,762 @@
-<!--- app-name: OpenCart -->
+# Concourse Helm Chart
 
-# OpenCart packaged by Bitnami
+[Concourse](https://concourse-ci.org/) is a simple and scalable CI system.
 
-OpenCart is free open source ecommerce platform for online merchants. OpenCart provides a professional and reliable foundation from which to build a successful online store.
 
-[Overview of OpenCart](http://www.opencart.com)
-
-Trademarks: This software listing is packaged by Bitnami. The respective trademarks mentioned in the offering are owned by the respective companies, and use of them does not imply any affiliation or endorsement.
-
-## TL;DR
+## TL;DR;
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/opencart
+$ helm repo add concourse https://concourse-charts.storage.googleapis.com/
+$ helm install my-release concourse/concourse
 ```
+
 
 ## Introduction
 
-This chart bootstraps an [OpenCart](https://github.com/bitnami/containers/tree/main/bitnami/opencart) deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a [Concourse](https://concourse-ci.org/) deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-It also packages the [Bitnami MariaDB chart](https://github.com/bitnami/charts/tree/main/bitnami/mariadb) which is required for bootstrapping a MariaDB deployment for the database requirements of the OpenCart application.
 
-Bitnami charts can be used with [Kubeapps](https://kubeapps.dev/) for deployment and management of Helm Charts in clusters.
+## Prerequisites Details
 
-## Prerequisites
+* Kubernetes 1.6 (for [`pod affinity`](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity) support)
+* [`PersistentVolume`](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) support on underlying infrastructure (if persistence is required)
+* Helm v3.x
 
-- Kubernetes 1.19+
-- Helm 3.2.0+
-- PV provisioner support in the underlying infrastructure
-- ReadWriteMany volumes for deployment scaling
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/opencart
+$ helm install my-release concourse/concourse
 ```
 
-The command deploys OpenCart on the Kubernetes cluster in the default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
-
-> **Tip**: List all releases using `helm list`
 
 ## Uninstalling the Chart
 
 To uninstall/delete the `my-release` deployment:
 
 ```console
-helm delete my-release
+$ helm delete my-release
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+The command removes nearly all the Kubernetes components associated with the chart and deletes the release.
 
-## Parameters
+> ps: By default, a [namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) is created for the `main` team named after `${RELEASE}-main` and is kept untouched after a `helm delete`.
+> See the [Configuration section](#configuration) for how to control the behavior.
 
-### Global parameters
 
-| Name                      | Description                                     | Value |
-| ------------------------- | ----------------------------------------------- | ----- |
-| `global.imageRegistry`    | Global Docker image registry                    | `""`  |
-| `global.imagePullSecrets` | Global Docker registry secret names as an array | `[]`  |
-| `global.storageClass`     | Global StorageClass for Persistent Volume(s)    | `""`  |
+### Cleanup orphaned Persistent Volumes
 
-### Common parameters
+This chart uses [`StatefulSets`](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) for Concourse Workers. Deleting a `StatefulSet` does not delete associated `PersistentVolume`s.
 
-| Name                | Description                                                                                                  | Value |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
-| `kubeVersion`       | Force target Kubernetes version (using Helm capabilities if not set)                                         | `""`  |
-| `nameOverride`      | String to partially override opencart.fullname template (will maintain the release name)                     | `""`  |
-| `fullnameOverride`  | String to fully override opencart.fullname template                                                          | `""`  |
-| `namespaceOverride` | String to fully override common.names.namespace                                                              | `""`  |
-| `commonAnnotations` | Common annotations to add to all OpenCart resources (sub-charts are not considered). Evaluated as a template | `{}`  |
-| `commonLabels`      | Common labels to add to all OpenCart resources (sub-charts are not considered). Evaluated as a template      | `{}`  |
-| `extraDeploy`       | Array of extra objects to deploy with the release (evaluated as a template)                                  | `[]`  |
-
-### OpenCart parameters
-
-| Name                                    | Description                                                                                              | Value                  |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `image.registry`                        | OpenCart image registry                                                                                  | `docker.io`            |
-| `image.repository`                      | OpenCart image repository                                                                                | `bitnami/opencart`     |
-| `image.tag`                             | OpenCart image tag (immutable tags are recommended)                                                      | `4.0.2-1-debian-11-r5` |
-| `image.digest`                          | OpenCart image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                   |
-| `image.pullPolicy`                      | OpenCart image pull policy                                                                               | `IfNotPresent`         |
-| `image.pullSecrets`                     | Specify docker-registry secret names as an array                                                         | `[]`                   |
-| `image.debug`                           | Specify if debug logs should be enabled                                                                  | `false`                |
-| `hostAliases`                           | Deployment pod host aliases                                                                              | `[]`                   |
-| `replicaCount`                          | Number of replicas (requires ReadWriteMany PVC support)                                                  | `1`                    |
-| `opencartSkipInstall`                   | Skip OpenCart installation wizard. Useful for migrations and restoring from SQL dump                     | `false`                |
-| `opencartHost`                          | OpenCart host to create application URLs                                                                 | `""`                   |
-| `opencartUsername`                      | User of the application                                                                                  | `user`                 |
-| `opencartPassword`                      | Application password                                                                                     | `""`                   |
-| `opencartEmail`                         | Admin email                                                                                              | `user@example.com`     |
-| `opencartEnableHttps`                   | Whether to use HTTPS by default, default is false.                                                       | `false`                |
-| `allowEmptyPassword`                    | Allow DB blank passwords                                                                                 | `true`                 |
-| `command`                               | Override default container command (useful when using custom images)                                     | `[]`                   |
-| `args`                                  | Override default container args (useful when using custom images)                                        | `[]`                   |
-| `updateStrategy.type`                   | Update strategy - only really applicable for deployments with RWO PVs attached                           | `RollingUpdate`        |
-| `priorityClassName`                     | OpenCart pods' priorityClassName                                                                         | `""`                   |
-| `schedulerName`                         | Name of the k8s scheduler (other than default)                                                           | `""`                   |
-| `topologySpreadConstraints`             | Topology Spread Constraints for pod assignment                                                           | `[]`                   |
-| `extraEnvVars`                          | An array to add extra env vars                                                                           | `[]`                   |
-| `extraEnvVarsCM`                        | ConfigMap with extra environment variables                                                               | `""`                   |
-| `extraEnvVarsSecret`                    | Secret with extra environment variables                                                                  | `""`                   |
-| `extraVolumes`                          | Extra volumes to add to the deployment. Requires setting `extraVolumeMounts`                             | `[]`                   |
-| `extraVolumeMounts`                     | Extra volume mounts to add to the container. Normally used with `extraVolumes`.                          | `[]`                   |
-| `initContainers`                        | Extra init containers to add to the deployment                                                           | `[]`                   |
-| `sidecars`                              | Extra sidecar containers to add to the deployment                                                        | `[]`                   |
-| `tolerations`                           | Tolerations for pod assignment. Evaluated as a template.                                                 | `[]`                   |
-| `existingSecret`                        | Name of a secret with the application password                                                           | `""`                   |
-| `smtpHost`                              | SMTP host                                                                                                | `""`                   |
-| `smtpPort`                              | SMTP port                                                                                                | `""`                   |
-| `smtpUser`                              | SMTP user                                                                                                | `""`                   |
-| `smtpPassword`                          | SMTP password                                                                                            | `""`                   |
-| `smtpProtocol`                          | SMTP Protocol (options: ssl,tls, nil)                                                                    | `""`                   |
-| `containerPorts`                        | Container ports                                                                                          | `{}`                   |
-| `persistence.enabled`                   | Enable persistence using PVC                                                                             | `true`                 |
-| `persistence.storageClass`              | OpenCart Data Persistent Volume Storage Class                                                            | `""`                   |
-| `persistence.accessModes`               | PVC Access Mode for OpenCart volume                                                                      | `["ReadWriteOnce"]`    |
-| `persistence.size`                      | PVC Storage Request for OpenCart volume                                                                  | `8Gi`                  |
-| `persistence.existingClaim`             | An Existing PVC name                                                                                     | `""`                   |
-| `persistence.hostPath`                  | Host mount path for OpenCart volume                                                                      | `""`                   |
-| `persistence.annotations`               | Persistent Volume Claim annotations                                                                      | `{}`                   |
-| `podAffinityPreset`                     | Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                      | `""`                   |
-| `podAntiAffinityPreset`                 | Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                 | `soft`                 |
-| `nodeAffinityPreset.type`               | Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                | `""`                   |
-| `nodeAffinityPreset.key`                | Node label key to match Ignored if `affinity` is set.                                                    | `""`                   |
-| `nodeAffinityPreset.values`             | Node label values to match. Ignored if `affinity` is set.                                                | `[]`                   |
-| `affinity`                              | Affinity for pod assignment                                                                              | `{}`                   |
-| `nodeSelector`                          | Node labels for pod assignment                                                                           | `{}`                   |
-| `resources.requests`                    | The requested resources for the container                                                                | `{}`                   |
-| `resources.limits`                      | The resources limits for the container                                                                   | `{}`                   |
-| `podSecurityContext.enabled`            | Enable OpenCart pods' Security Context                                                                   | `true`                 |
-| `podSecurityContext.fsGroup`            | OpenCart pods' group ID                                                                                  | `1001`                 |
-| `containerSecurityContext.enabled`      | Enable OpenCart containers' Security Context                                                             | `true`                 |
-| `containerSecurityContext.runAsUser`    | OpenCart containers' Security Context runAsUser                                                          | `1001`                 |
-| `containerSecurityContext.runAsNonRoot` | OpenCart containers' Security Context runAsNonRoot                                                       | `true`                 |
-| `startupProbe.enabled`                  | Enable startupProbe                                                                                      | `false`                |
-| `startupProbe.path`                     | Request path for startupProbe                                                                            | `/administration/`     |
-| `startupProbe.initialDelaySeconds`      | Initial delay seconds for startupProbe                                                                   | `120`                  |
-| `startupProbe.periodSeconds`            | Period seconds for startupProbe                                                                          | `10`                   |
-| `startupProbe.timeoutSeconds`           | Timeout seconds for startupProbe                                                                         | `5`                    |
-| `startupProbe.failureThreshold`         | Failure threshold for startupProbe                                                                       | `6`                    |
-| `startupProbe.successThreshold`         | Success threshold for startupProbe                                                                       | `1`                    |
-| `livenessProbe.enabled`                 | Enable livenessProbe                                                                                     | `true`                 |
-| `livenessProbe.path`                    | Request path for livenessProbe                                                                           | `/administration/`     |
-| `livenessProbe.initialDelaySeconds`     | Initial delay seconds for livenessProbe                                                                  | `120`                  |
-| `livenessProbe.periodSeconds`           | Period seconds for livenessProbe                                                                         | `10`                   |
-| `livenessProbe.timeoutSeconds`          | Timeout seconds for livenessProbe                                                                        | `5`                    |
-| `livenessProbe.failureThreshold`        | Failure threshold for livenessProbe                                                                      | `6`                    |
-| `livenessProbe.successThreshold`        | Success threshold for livenessProbe                                                                      | `1`                    |
-| `readinessProbe.enabled`                | Enable readinessProbe                                                                                    | `true`                 |
-| `readinessProbe.path`                   | Request path for readinessProbe                                                                          | `/administration/`     |
-| `readinessProbe.initialDelaySeconds`    | Initial delay seconds for readinessProbe                                                                 | `30`                   |
-| `readinessProbe.periodSeconds`          | Period seconds for readinessProbe                                                                        | `5`                    |
-| `readinessProbe.timeoutSeconds`         | Timeout seconds for readinessProbe                                                                       | `3`                    |
-| `readinessProbe.failureThreshold`       | Failure threshold for readinessProbe                                                                     | `6`                    |
-| `readinessProbe.successThreshold`       | Success threshold for readinessProbe                                                                     | `1`                    |
-| `customStartupProbe`                    | Override default startup probe                                                                           | `{}`                   |
-| `customLivenessProbe`                   | Override default liveness probe                                                                          | `{}`                   |
-| `customReadinessProbe`                  | Override default readiness probe                                                                         | `{}`                   |
-| `lifecycleHooks`                        | lifecycleHooks for the container to automate configuration before or after startup                       | `{}`                   |
-| `podAnnotations`                        | Pod annotations                                                                                          | `{}`                   |
-| `podLabels`                             | Add additional labels to the pod (evaluated as a template)                                               | `{}`                   |
-
-### Traffic Exposure Parameters
-
-| Name                               | Description                                                                                                                      | Value                    |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `service.type`                     | Kubernetes Service type                                                                                                          | `LoadBalancer`           |
-| `service.ports.http`               | Service HTTP port                                                                                                                | `80`                     |
-| `service.ports.https`              | Service HTTPS port                                                                                                               | `443`                    |
-| `service.nodePorts.http`           | Kubernetes HTTP node port                                                                                                        | `""`                     |
-| `service.nodePorts.https`          | Kubernetes HTTPS node port                                                                                                       | `""`                     |
-| `service.clusterIP`                | OpenCart service Cluster IP                                                                                                      | `""`                     |
-| `service.loadBalancerSourceRanges` | OpenCart service Load Balancer sources                                                                                           | `[]`                     |
-| `service.loadBalancerIP`           | OpenCart service Load Balancer IP                                                                                                | `""`                     |
-| `service.externalTrafficPolicy`    | Enable client source IP preservation                                                                                             | `Cluster`                |
-| `service.extraPorts`               | Extra ports to expose (normally used with the `sidecar` value)                                                                   | `[]`                     |
-| `service.annotations`              | Additional custom annotations for OpenCart service                                                                               | `{}`                     |
-| `service.sessionAffinity`          | Control where client requests go, to the same pod or round-robin                                                                 | `None`                   |
-| `service.sessionAffinityConfig`    | Additional settings for the sessionAffinity                                                                                      | `{}`                     |
-| `ingress.enabled`                  | Set to true to enable ingress record generation                                                                                  | `false`                  |
-| `ingress.pathType`                 | Ingress path type                                                                                                                | `ImplementationSpecific` |
-| `ingress.apiVersion`               | Override API Version (automatically detected if not set)                                                                         | `""`                     |
-| `ingress.hostname`                 | Default host for the ingress resource                                                                                            | `opencart.local`         |
-| `ingress.path`                     | The Path to Opencart. You may need to set this to '/*' in order to use this with ALB ingress controllers.                        | `/`                      |
-| `ingress.annotations`              | Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations. | `{}`                     |
-| `ingress.tls`                      | Enable TLS configuration for the hostname defined at ingress.hostname parameter                                                  | `false`                  |
-| `ingress.extraHosts`               | The list of additional hostnames to be covered with this ingress record.                                                         | `[]`                     |
-| `ingress.extraPaths`               | Any additional arbitrary paths that may need to be added to the ingress under the main host.                                     | `[]`                     |
-| `ingress.extraTls`                 | The tls configuration for additional hostnames to be covered with this ingress record.                                           | `[]`                     |
-| `ingress.secrets`                  | If you're providing your own certificates, please use this to add the certificates as secrets                                    | `[]`                     |
-| `ingress.ingressClassName`         | IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)                                                    | `""`                     |
-| `ingress.extraRules`               | Additional rules to be covered with this ingress record                                                                          | `[]`                     |
-
-### Database parameters
-
-| Name                                        | Description                                                                              | Value               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------- |
-| `mariadb.enabled`                           | Whether to deploy a mariadb server to satisfy the applications database requirements     | `true`              |
-| `mariadb.architecture`                      | MariaDB architecture. Allowed values: `standalone` or `replication`                      | `standalone`        |
-| `mariadb.auth.rootPassword`                 | Password for the MariaDB `root` user                                                     | `""`                |
-| `mariadb.auth.database`                     | Database name to create                                                                  | `bitnami_opencart`  |
-| `mariadb.auth.username`                     | Database user to create                                                                  | `bn_opencart`       |
-| `mariadb.auth.password`                     | Password for the database                                                                | `""`                |
-| `mariadb.primary.persistence.enabled`       | Enable database persistence using PVC                                                    | `true`              |
-| `mariadb.primary.persistence.storageClass`  | MariaDB primary persistent volume storage Class                                          | `""`                |
-| `mariadb.primary.persistence.accessModes`   | Database Persistent Volume Access Modes                                                  | `["ReadWriteOnce"]` |
-| `mariadb.primary.persistence.size`          | Database Persistent Volume Size                                                          | `8Gi`               |
-| `mariadb.primary.persistence.hostPath`      | Set path in case you want to use local host path volumes (not recommended in production) | `""`                |
-| `mariadb.primary.persistence.existingClaim` | Name of an existing `PersistentVolumeClaim` for MariaDB primary replicas                 | `""`                |
-| `externalDatabase.host`                     | Host of the existing database                                                            | `""`                |
-| `externalDatabase.port`                     | Port of the existing database                                                            | `3306`              |
-| `externalDatabase.user`                     | Existing username in the external db                                                     | `bn_opencart`       |
-| `externalDatabase.password`                 | Password for the above username                                                          | `""`                |
-| `externalDatabase.database`                 | Name of the existing database                                                            | `bitnami_opencart`  |
-| `externalDatabase.existingSecret`           | Name of an existing secret resource containing the DB password                           | `""`                |
-
-### Volume Permissions parameters
-
-| Name                                   | Description                                                                                                                                               | Value                   |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `volumePermissions.enabled`            | Enable init container that changes volume permissions in the data directory (for cases where the default k8s `runAsUser` and `fsUser` values do not work) | `false`                 |
-| `volumePermissions.image.registry`     | Init container volume-permissions image registry                                                                                                          | `docker.io`             |
-| `volumePermissions.image.repository`   | Init container volume-permissions image repository                                                                                                        | `bitnami/bitnami-shell` |
-| `volumePermissions.image.tag`          | Init container volume-permissions image tag (immutable tags are recommended)                                                                              | `11-debian-11-r111`     |
-| `volumePermissions.image.digest`       | Init container volume-permissions image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag                         | `""`                    |
-| `volumePermissions.image.pullPolicy`   | Init container volume-permissions image pull policy                                                                                                       | `IfNotPresent`          |
-| `volumePermissions.image.pullSecrets`  | Specify docker-registry secret names as an array                                                                                                          | `[]`                    |
-| `volumePermissions.resources.limits`   | The resources limits for the container                                                                                                                    | `{}`                    |
-| `volumePermissions.resources.requests` | The requested resources for the container                                                                                                                 | `{}`                    |
-
-### Metrics parameters
-
-| Name                        | Description                                                                                                     | Value                     |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `metrics.enabled`           | Start a side-car prometheus exporter                                                                            | `false`                   |
-| `metrics.image.registry`    | Apache exporter image registry                                                                                  | `docker.io`               |
-| `metrics.image.repository`  | Apache exporter image repository                                                                                | `bitnami/apache-exporter` |
-| `metrics.image.tag`         | Apache exporter image tag (immutable tags are recommended)                                                      | `0.13.3-debian-11-r2`     |
-| `metrics.image.digest`      | Apache exporter image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                      |
-| `metrics.image.pullPolicy`  | Image pull policy                                                                                               | `IfNotPresent`            |
-| `metrics.image.pullSecrets` | Specify docker-registry secret names as an array                                                                | `[]`                      |
-| `metrics.resources`         | Metrics exporter resource requests and limits                                                                   | `{}`                      |
-| `metrics.podAnnotations`    | Metrics exporter pod Annotation and Labels                                                                      | `{}`                      |
-
-### Certificate injection parameters
-
-| Name                                                 | Description                                                                                                       | Value                                    |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `certificates.customCertificate.certificateSecret`   | Secret containing the certificate and key to add                                                                  | `""`                                     |
-| `certificates.customCertificate.chainSecret.name`    | Name of the secret containing the certificate chain                                                               | `""`                                     |
-| `certificates.customCertificate.chainSecret.key`     | Key of the certificate chain file inside the secret                                                               | `""`                                     |
-| `certificates.customCertificate.certificateLocation` | Location in the container to store the certificate                                                                | `/etc/ssl/certs/ssl-cert-snakeoil.pem`   |
-| `certificates.customCertificate.keyLocation`         | Location in the container to store the private key                                                                | `/etc/ssl/private/ssl-cert-snakeoil.key` |
-| `certificates.customCertificate.chainLocation`       | Location in the container to store the certificate chain                                                          | `/etc/ssl/certs/mychain.pem`             |
-| `certificates.customCAs`                             | Defines a list of secrets to import into the container trust store                                                | `[]`                                     |
-| `certificates.command`                               | Override default container command (useful when using custom images)                                              | `[]`                                     |
-| `certificates.args`                                  | Override default container args (useful when using custom images)                                                 | `[]`                                     |
-| `certificates.extraEnvVars`                          | Container sidecar extra environment variables                                                                     | `[]`                                     |
-| `certificates.extraEnvVarsCM`                        | ConfigMap with extra environment variables                                                                        | `""`                                     |
-| `certificates.extraEnvVarsSecret`                    | Secret with extra environment variables                                                                           | `""`                                     |
-| `certificates.image.registry`                        | Container sidecar registry                                                                                        | `docker.io`                              |
-| `certificates.image.repository`                      | Container sidecar image repository                                                                                | `bitnami/bitnami-shell`                  |
-| `certificates.image.tag`                             | Container sidecar image tag (immutable tags are recommended)                                                      | `11-debian-11-r111`                      |
-| `certificates.image.digest`                          | Container sidecar image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                                     |
-| `certificates.image.pullPolicy`                      | Container sidecar image pull policy                                                                               | `IfNotPresent`                           |
-| `certificates.image.pullSecrets`                     | Container sidecar image pull secrets                                                                              | `[]`                                     |
-
-### NetworkPolicy parameters
-
-| Name                                                          | Description                                                                                                                  | Value   |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `networkPolicy.enabled`                                       | Enable network policies                                                                                                      | `false` |
-| `networkPolicy.metrics.enabled`                               | Enable network policy for metrics (prometheus)                                                                               | `false` |
-| `networkPolicy.metrics.namespaceSelector`                     | Monitoring namespace selector labels. These labels will be used to identify the prometheus' namespace.                       | `{}`    |
-| `networkPolicy.metrics.podSelector`                           | Monitoring pod selector labels. These labels will be used to identify the Prometheus pods.                                   | `{}`    |
-| `networkPolicy.ingress.enabled`                               | Enable network policy for Ingress Proxies                                                                                    | `false` |
-| `networkPolicy.ingress.namespaceSelector`                     | Ingress Proxy namespace selector labels. These labels will be used to identify the Ingress Proxy's namespace.                | `{}`    |
-| `networkPolicy.ingress.podSelector`                           | Ingress Proxy pods selector labels. These labels will be used to identify the Ingress Proxy pods.                            | `{}`    |
-| `networkPolicy.ingressRules.backendOnlyAccessibleByFrontend`  | Enable ingress rule that makes the backend (mariadb) only accessible by OpenCart's pods.                                     | `false` |
-| `networkPolicy.ingressRules.customBackendSelector`            | Backend selector labels. These labels will be used to identify the backend pods.                                             | `{}`    |
-| `networkPolicy.ingressRules.accessOnlyFrom.enabled`           | Enable ingress rule that makes OpenCart only accessible from a particular origin                                             | `false` |
-| `networkPolicy.ingressRules.accessOnlyFrom.namespaceSelector` | Namespace selector label that is allowed to access OpenCart. This label will be used to identified the allowed namespace(s). | `{}`    |
-| `networkPolicy.ingressRules.accessOnlyFrom.podSelector`       | Pods selector label that is allowed to access OpenCart. This label will be used to identified the allowed pod(s).            | `{}`    |
-| `networkPolicy.ingressRules.customRules`                      | Custom network policy ingress rule                                                                                           | `{}`    |
-| `networkPolicy.egressRules.denyConnectionsToExternal`         | Enable egress rule that denies outgoing traffic outside the cluster, except for DNS (port 53).                               | `false` |
-| `networkPolicy.egressRules.customRules`                       | Custom network policy rule                                                                                                   | `{}`    |
-
-The above parameters map to the env variables defined in [bitnami/opencart](https://github.com/bitnami/containers/tree/main/bitnami/opencart). For more information please refer to the [bitnami/opencart](https://github.com/bitnami/containers/tree/main/bitnami/opencart) image documentation.
-
-> **Note**:
->
-> For OpenCart to function correctly, you should specify the `opencartHost` parameter to specify the FQDN (recommended) or the public IP address of the OpenCart service.
->
-> Optionally, you can specify the `opencartLoadBalancerIP` parameter to assign a reserved IP address to the OpenCart service of the chart. However please note that this feature is only available on a few cloud providers (f.e. GKE).
->
-> To reserve a public IP address on GKE:
->
-> ```console
-> $ gcloud compute addresses create opencart-public-ip
-> ```
->
-> The reserved IP address can be associated to the OpenCart service by specifying it as the value of the `opencartLoadBalancerIP` parameter while installing the chart.
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+Do the following after deleting the chart release to clean up orphaned Persistent Volumes.
 
 ```console
-helm install my-release \
-  --set opencartUsername=admin,opencartPassword=password,mariadb.auth.rootPassword=secretpassword \
-    oci://registry-1.docker.io/bitnamicharts/opencart
+$ kubectl delete pvc -l app=${RELEASE-NAME}-worker
 ```
 
-The above command sets the OpenCart administrator account username and password to `admin` and `password` respectively. Additionally, it sets the MariaDB `root` user password to `secretpassword`.
 
-> NOTE: Once this chart is deployed, it is not possible to change the application's access credentials, such as usernames or passwords, using Helm. To change these application credentials after deployment, delete any persistent volumes (PVs) used by the chart and re-deploy it, or use the application's built-in administrative tools if available.
+### Restarting workers
 
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
+If a [Worker](https://concourse-ci.org/architecture.html#architecture-worker) isn't taking on work, you can recreate it with `kubectl delete pod`. This initiates a graceful shutdown by ["retiring"](https://concourse-ci.org/worker-internals.html#RETIRING-table) the worker, to ensure Concourse doesn't try looking for old volumes on the new worker.
+
+The value`worker.terminationGracePeriodSeconds` can be used to provide an upper limit on graceful shutdown time before forcefully terminating the container.
+
+Check the output of `fly workers`, and if a worker is [`stalled`](https://concourse-ci.org/worker-internals.html#STALLED-table), you'll also need to run [`fly prune-worker`](https://concourse-ci.org/administration.html#fly-prune-worker) to allow the new incarnation of the worker to start.
+
+> **TIP**: you can download `fly` either from https://concourse-ci.org/download.html or the home page of your Concourse installation.
+
+When using ephemeral workers with `worker.kind: Deployment` and spawning a lot of (new) workers, you might run into [issue 3091](https://github.com/concourse/concourse/issues/3091).
+As a workaround you could start a `worker.extraInitContainers` to cleanup unused loopback devices.
+
+### Worker Liveness Probe
+
+By default, the worker's [`LivenessProbe`](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes) will trigger a restart of the worker container if it detects errors when trying to reach the worker's healthcheck endpoint which takes care of making sure that the [workers' components](https://concourse-ci.org/architecture.html#architecture) can properly serve their purpose.
+
+See [Configuration](#configuration) and [`values.yaml`](./values.yaml) for the configuration of both the `livenessProbe` (`worker.livenessProbe`) and the default healthchecking timeout (`concourse.worker.healthcheckTimeout`).
+
+
+## Configuration
+
+The following table lists the configurable parameters of the Concourse chart and their default values.
+
+| Parameter               | Description                           | Default                                                    |
+| ----------------------- | ----------------------------------    | ---------------------------------------------------------- |
+| `fullnameOverride` | Provide a name to substitute for the full names of resources | `nil` |
+| `imageDigest` | Specific image digest to use in place of a tag. | `nil` |
+| `imagePullPolicy` | Concourse image pull policy | `IfNotPresent` |
+| `imagePullSecrets` | Array of imagePullSecrets in the namespace for pulling images | `[]` |
+| `imageTag` | Concourse image version | `7.9.1` |
+| `image` | Concourse image | `concourse/concourse` |
+| `nameOverride` | Provide a name in place of `concourse` for `app:` labels | `nil` |
+| `persistence.enabled` | Enable Concourse persistence using Persistent Volume Claims | `true` |
+| `persistence.worker.accessMode` | Concourse Worker Persistent Volume Access Mode | `ReadWriteOnce` |
+| `persistence.worker.size` | Concourse Worker Persistent Volume Storage Size | `20Gi` |
+| `persistence.worker.storageClass` | Concourse Worker Persistent Volume Storage Class | `generic` |
+| `postgresql.enabled` | Enable PostgreSQL as a chart dependency | `true` |
+| `postgresql.persistence.accessModes` | Persistent Volume Access Mode | `["ReadWriteOnce"]` |
+| `postgresql.persistence.enabled` | Enable PostgreSQL persistence using Persistent Volume Claims | `true` |
+| `postgresql.persistence.size` | Persistent Volume Storage Size | `8Gi` |
+| `postgresql.persistence.storageClass` | Concourse data Persistent Volume Storage Class | `nil` |
+| `persistence.worker.selector` | Concourse Worker Persistent Volume selector | `nil` |
+| `postgresql.auth.database` | PostgreSQL Database to create | `concourse` |
+| `postgresql.auth.password` | PostgreSQL Password for the new user | `concourse` |
+| `postgresql.auth.username` | PostgreSQL User to create | `concourse` |
+| `rbac.apiVersion` | RBAC version | `v1beta1` |
+| `rbac.create` | Enables creation of RBAC resources | `true` |
+| `rbac.webServiceAccountName` | Name of the service account to use for web pods if `rbac.create` is `false` | `default` |
+| `rbac.webServiceAccountAnnotations` | Any annotations to be attached to the web service account | `{}` |
+| `rbac.workerServiceAccountName` | Name of the service account to use for workers if `rbac.create` is `false` | `default` |
+| `rbac.workerServiceAccountAnnotations` | Any annotations to be attached to the worker service account | `{}` |
+| `podSecurityPolicy.create` | Enables creation of podSecurityPolicy resources | `false` |
+| `podSecurityPolicy.allowedWorkerVolumes` | List of volumes allowed by the podSecurityPolicy for the worker pods | *See [values.yaml](values.yaml)* |
+| `podSecurityPolicy.allowedWebVolumes` | List of volumes allowed by the podSecurityPolicy for the web pods | *See [values.yaml](values.yaml)* |
+| `secrets.annotations`| Annotations to be added to the secrets | `{}` |
+| `secrets.awsSecretsmanagerAccessKey` | AWS Access Key ID for Secrets Manager access | `nil` |
+| `secrets.awsSecretsmanagerSecretKey` | AWS Secret Access Key ID for Secrets Manager access | `nil` |
+| `secrets.awsSecretsmanagerSessionToken` | AWS Session Token for Secrets Manager access | `nil` |
+| `secrets.awsSsmAccessKey` | AWS Access Key ID for SSM access | `nil` |
+| `secrets.awsSsmSecretKey` | AWS Secret Access Key ID for SSM access | `nil` |
+| `secrets.awsSsmSessionToken` | AWS Session Token for SSM access | `nil` |
+| `secrets.bitbucketCloudClientId` | Client ID for the BitbucketCloud OAuth | `nil` |
+| `secrets.bitbucketCloudClientSecret` | Client Secret for the BitbucketCloud OAuth | `nil` |
+| `secrets.cfCaCert` | CA certificate for cf auth provider | `nil` |
+| `secrets.cfClientId` | Client ID for cf auth provider | `nil` |
+| `secrets.cfClientSecret` | Client secret for cf auth provider | `nil` |
+| `secrets.conjurAccount` | Account for Conjur auth provider | `nil` |
+| `secrets.conjurAuthnLogin` | Host username for Conjur auth provider | `nil` |
+| `secrets.conjurAuthnApiKey` | API key for host used for Conjur auth provider. Either API key or token file can be used, but not both. | `nil` |
+| `secrets.conjurAuthnTokenFile` | Token file used for Conjur auth provider if running in Kubernetes or IAM. Either token file or API key can be used, but not both. | `nil` |
+| `secrets.conjurCACert` | CA Cert used if Conjur instance is deployed with a self-signed certificate  | `nil` |
+| `secrets.create` | Create the secret resource from the following values. *See [Secrets](#secrets)* | `true` |
+| `secrets.credhubCaCert` | Value of PEM-encoded CA cert file to use to verify the CredHub server SSL cert. | `nil` |
+| `secrets.credhubClientId` | Client ID for CredHub authorization. | `nil` |
+| `secrets.credhubClientSecret` | Client secret for CredHub authorization. | `nil` |
+| `secrets.credhubClientKey` | Client key for Credhub authorization. | `nil` |
+| `secrets.credhubClientCert` | Client cert for Credhub authorization | `nil` |
+| `secrets.encryptionKey` | current encryption key | `nil` |
+| `secrets.githubCaCert` | CA certificate for Enterprise Github OAuth | `nil` |
+| `secrets.githubClientId` | Application client ID for GitHub OAuth | `nil` |
+| `secrets.githubClientSecret` | Application client secret for GitHub OAuth | `nil` |
+| `secrets.gitlabClientId` | Application client ID for GitLab OAuth | `nil` |
+| `secrets.gitlabClientSecret` | Application client secret for GitLab OAuth | `nil` |
+| `secrets.hostKeyPub` | Concourse Host Public Key | *See [values.yaml](values.yaml)* |
+| `secrets.hostKey` | Concourse Host Private Key | *See [values.yaml](values.yaml)* |
+| `secrets.influxdbPassword` | Password used to authenticate with influxdb | `nil` |
+| `secrets.ldapCaCert` | CA Certificate for LDAP | `nil` |
+| `secrets.localUsers` | Create concourse local users. Default username and password are `test:test` *See [values.yaml](values.yaml)* |
+| `secrets.microsoftClientId` | Client ID for Microsoft authorization. | `nil ` |
+| `secrets.microsoftClientSecret` | Client secret for Microsoft authorization. | `nil` |
+| `secrets.oauthCaCert` | CA certificate for Generic OAuth | `nil` |
+| `secrets.oauthClientId` | Application client ID for Generic OAuth | `nil` |
+| `secrets.oauthClientSecret` | Application client secret for Generic OAuth | `nil` |
+| `secrets.oidcCaCert` | CA certificate for OIDC Oauth | `nil` |
+| `secrets.oidcClientId` | Application client ID for OIDI OAuth | `nil` |
+| `secrets.oidcClientSecret` | Application client secret for OIDC OAuth | `nil` |
+| `secrets.oldEncryptionKey` | old encryption key, used for key rotation | `nil` |
+| `secrets.postgresCaCert` | PostgreSQL CA certificate | `nil` |
+| `secrets.postgresClientCert` | PostgreSQL Client certificate | `nil` |
+| `secrets.postgresClientKey` | PostgreSQL Client key | `nil` |
+| `secrets.postgresPassword` | PostgreSQL User Password | `nil` |
+| `secrets.postgresUser` | PostgreSQL User Name | `nil` |
+| `secrets.samlCaCert` | CA Certificate for SAML | `nil` |
+| `secrets.sessionSigningKey` | Concourse Session Signing Private Key | *See [values.yaml](values.yaml)* |
+| `secrets.syslogCaCert` | SSL certificate to verify Syslog server | `nil` |
+| `secrets.teamAuthorizedKeys` | Array of team names and worker public keys for external workers | `nil` |
+| `secrets.vaultAuthParam` | Paramter to pass when logging in via the backend | `nil` |
+| `secrets.vaultCaCert` | CA certificate use to verify the vault server SSL cert | `nil` |
+| `secrets.vaultClientCert` | Vault Client Certificate | `nil` |
+| `secrets.vaultClientKey` | Vault Client Key | `nil` |
+| `secrets.vaultClientToken` | Vault periodic client token | `nil` |
+| `secrets.webTlsCert` | TLS certificate for the web component to terminate TLS connections | `nil` |
+| `secrets.webTlsKey` | An RSA private key, used to encrypt HTTPS traffic  | `nil` |
+| `secrets.webTlsCaCert` | TLS CA certificate for the web component to terminate TLS connections | `nil` |
+| `secrets.workerKeyPub` | Concourse Worker Public Key | *See [values.yaml](values.yaml)* |
+| `secrets.workerKey` | Concourse Worker Private Key | *See [values.yaml](values.yaml)* |
+| `secrets.workerAdditionalCerts` | Concourse Worker Additional Certificates | *See [values.yaml](values.yaml)* |
+| `web.additionalAffinities` | Additional affinities to apply to web pods. E.g: node affinity | `{}` |
+| `web.additionalVolumeMounts` | VolumeMounts to be added to the web pods | `nil` |
+| `web.additionalVolumes` | Volumes to be added to the web pods | `nil` |
+| `web.annotations`| Annotations to be added to the web pods | `{}` |
+| `web.authSecretsPath` | Specify the mount directory of the web auth secrets | `/concourse-auth` |
+| `web.credhubSecretsPath` | Specify the mount directory of the web credhub secrets | `/concourse-credhub` |
+| `web.datadog.agentHostUseHostIP` | Use IP of Pod's node overrides `agentHost` | `false` |
+| `web.datadog.agentHost` | Datadog Agent host | `127.0.0.1` |
+| `web.datadog.agentPort` | Datadog Agent port | `8125` |
+| `web.datadog.agentUdsFilepath` | Datadog agent unix domain socket (uds) filepath to expose dogstatsd metrics (ex. `/tmp/datadog.socket`) | `nil` |
+| `web.datadog.enabled` | Enable or disable Datadog metrics | `false` |
+| `web.datadog.prefix` | Prefix for emitted metrics | `"concourse.ci"` |
+| `web.enabled` | Enable or disable the web component | `true` |
+| `web.env` | Configure additional environment variables for the web containers | `[]` |
+| `web.command` | Override the docker image command | `nil` |
+| `web.args` | Docker image command arguments | `["web"]` |
+| `web.ingress.annotations` | Concourse Web Ingress annotations | `{}` |
+| `web.ingress.enabled` | Enable Concourse Web Ingress | `false` |
+| `web.ingress.hosts` | Concourse Web Ingress Hostnames | `[]` |
+| `web.ingress.ingressClassName` | IngressClass to register to | `nil` |
+| `web.ingress.rulesOverride` | Concourse Web Ingress rules (override) (alternate to `web.ingress.hosts`) | `[]` |
+| `web.ingress.tls` | Concourse Web Ingress TLS configuration | `[]` |
+| `web.keySecretsPath` | Specify the mount directory of the web keys secrets | `/concourse-keys` |
+| `web.labels`| Additional labels to be added to the web deployment `metadata.labels` | `{}` |
+| `web.livenessProbe.failureThreshold` | Minimum consecutive failures for the probe to be considered failed after having succeeded | `5` |
+| `web.livenessProbe.httpGet.path` | Path to access on the HTTP server when performing the healthcheck | `/api/v1/info` |
+| `web.livenessProbe.httpGet.port` | Name or number of the port to access on the container | `atc` |
+| `web.livenessProbe.initialDelaySeconds` | Number of seconds after the container has started before liveness probes are initiated | `10` |
+| `web.livenessProbe.periodSeconds` | How often (in seconds) to perform the probe | `15` |
+| `web.livenessProbe.timeoutSeconds` | Number of seconds after which the probe times out | `3` |
+| `web.nameOverride` | Override the Concourse Web components name | `nil` |
+| `web.nodeSelector` | Node selector for web nodes | `{}` |
+| `web.podLabels`| Additional labels to be added to the web deployment `spec.template.metadata.labels`, setting pods `metadata.labels` | `{}` |
+| `web.postgresqlSecretsPath` | Specify the mount directory of the web postgresql secrets | `/concourse-postgresql` |
+| `web.prometheus.enabled` | Enable the Prometheus metrics endpoint | `false` |
+| `web.prometheus.bindIp` | IP to listen on to expose Prometheus metrics | `0.0.0.0` |
+| `web.prometheus.bindPort` | Port to listen on to expose Prometheus metrics | `9391` |
+| `web.prometheus.ServiceMonitor.enabled` | Enable the creation of a serviceMonitor object for the Prometheus operator | `false` |
+| `web.prometheus.ServiceMonitor.interval` | The interval the Prometheus endpoint is scraped | `30s` |
+| `web.prometheus.ServiceMonitor.namespace` | The namespace where the serviceMonitor object has to be created | `nil` |
+| `web.prometheus.ServiceMonitor.labels` | Additional lables for the serviceMonitor object | `nil` |
+| `web.prometheus.ServiceMonitor.metricRelabelings` | Relabel metrics as defined [here](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs) | `nil` |
+| `web.readinessProbe.httpGet.path` | Path to access on the HTTP server when performing the healthcheck | `/api/v1/info` |
+| `web.readinessProbe.httpGet.port` | Name or number of the port to access on the container | `atc` |
+| `web.replicas` | Number of Concourse Web replicas | `1` |
+| `web.resources.requests.cpu` | Minimum amount of cpu resources requested | `100m` |
+| `web.resources.requests.memory` | Minimum amount of memory resources requested | `128Mi` |
+| `web.service.api.annotations` | Concourse Web API Service annotations | `nil` |
+| `web.service.api.NodePort` | Sets the nodePort for api when using `NodePort` | `nil` |
+| `web.service.api.labels` | Additional concourse web api service labels | `nil` |
+| `web.service.api.loadBalancerIP` | The IP to use when web.service.api.type is LoadBalancer | `nil` |
+| `web.service.api.clusterIP` | The IP to use when web.service.api.type is ClusterIP | `nil` |
+| `web.service.api.loadBalancerSourceRanges` | Concourse Web API Service Load Balancer Source IP ranges | `nil` |
+| `web.service.api.tlsNodePort` | Sets the nodePort for api tls when using `NodePort` | `nil` |
+| `web.service.api.type` | Concourse Web API service type | `ClusterIP` |
+| `web.service.workerGateway.annotations` | Concourse Web workerGateway Service annotations | `nil` |
+| `web.service.workerGateway.labels` | Additional concourse web workerGateway service labels | `nil` |
+| `web.service.workerGateway.loadBalancerIP` | The IP to use when web.service.workerGateway.type is LoadBalancer | `nil` |
+| `web.service.workerGateway.clusterIP` | The IP to use when web.service.workerGateway.type is ClusterIP | `None` |
+| `web.service.workerGateway.loadBalancerSourceRanges` | Concourse Web workerGateway Service Load Balancer Source IP ranges | `nil` |
+| `web.service.workerGateway.NodePort` | Sets the nodePort for workerGateway when using `NodePort` | `nil` |
+| `web.service.workerGateway.type` | Concourse Web workerGateway service type | `ClusterIP` |
+| `web.service.prometheus.annotations` | Concourse Web Prometheus Service annotations | `nil` |
+| `web.service.prometheus.labels` | Additional concourse web prometheus service labels | `nil` |
+| `web.shareProcessNamespace` | Enable or disable the process namespace sharing for the web nodes | `false` |
+| `web.priorityClassName` | Sets a PriorityClass for the web pods | `nil` |
+| `web.sidecarContainers` | Array of extra containers to run alongside the Concourse web container | `nil` |
+| `web.extraInitContainers` | Array of extra init containers to run before the Concourse web container | `nil` |
+| `web.strategy` | Strategy for updates to deployment. | `{}` |
+| `web.syslogSecretsPath` | Specify the mount directory of the web syslog secrets | `/concourse-syslog` |
+| `web.tlsSecretsPath` | Where in the container the web TLS secrets should be mounted | `/concourse-web-tls` |
+| `web.tolerations` | Tolerations for the web nodes | `[]` |
+| `web.vaultSecretsPath` | Specify the mount directory of the web vault secrets | `/concourse-vault` |
+| `worker.additionalAffinities` | Additional affinities to apply to worker pods. E.g: node affinity | `{}` |
+| `worker.additionalVolumeMounts` | VolumeMounts to be added to the worker pods | `nil` |
+| `worker.additionalVolumes` | Volumes to be added to the worker pods | `nil` |
+| `worker.annotations` | Annotations to be added to the worker pods | `{}` |
+| `worker.autoscaling` | Enable and configure pod autoscaling | `{}` |
+| `worker.cleanUpWorkDirOnStart` | Removes any previous state created in `concourse.worker.workDir` | `true` |
+| `worker.emptyDirSize` | When persistance is disabled this value will be used to limit the emptyDir volume size | `nil` |
+| `worker.enabled` | Enable or disable the worker component. You should set postgres.enabled=false in order not to get an unnecessary Postgres chart deployed | `true` |
+| `worker.env` | Configure additional environment variables for the worker container(s) | `[]` |
+| `worker.hardAntiAffinity` | Should the workers be forced (as opposed to preferred) to be on different nodes? | `false` |
+| `worker.hardAntiAffinityLabels` | Set of labels used for hard anti affinity rule | `{}` |
+| `worker.keySecretsPath` | Specify the mount directory of the worker keys secrets | `/concourse-keys` |
+| `worker.certsPath` | Specify the path for additional worker certificates | `/etc/ssl/certs` |
+| `worker.kind` | Choose between `StatefulSet` to preserve state or `Deployment` for ephemeral workers | `StatefulSet` |
+| `worker.livenessProbe.failureThreshold` | Minimum consecutive failures for the probe to be considered failed after having succeeded | `5` |
+| `worker.livenessProbe.httpGet.path` | Path to access on the HTTP server when performing the healthcheck | `/` |
+| `worker.livenessProbe.httpGet.port` | Name or number of the port to access on the container | `worker-hc` |
+| `worker.livenessProbe.initialDelaySeconds` | Number of seconds after the container has started before liveness probes are initiated | `10` |
+| `worker.livenessProbe.periodSeconds` | How often (in seconds) to perform the probe | `15` |
+| `worker.livenessProbe.timeoutSeconds` | Number of seconds after which the probe times out | `3` |
+| `worker.minAvailable` | Minimum number of workers available after an eviction | `1` |
+| `worker.nameOverride` | Override the Concourse Worker components name | `nil` |
+| `worker.nodeSelector` | Node selector for worker nodes | `{}` |
+| `worker.podManagementPolicy` | `OrderedReady` or `Parallel` (requires Kubernetes >= 1.7) | `Parallel` |
+| `worker.readinessProbe` | Periodic probe of container service readiness | `{}` |
+| `worker.replicas` | Number of Concourse Worker replicas | `2` |
+| `worker.resources.requests.cpu` | Minimum amount of cpu resources requested | `100m` |
+| `worker.resources.requests.memory` | Minimum amount of memory resources requested | `512Mi` |
+| `worker.sidecarContainers` | Array of extra containers to run alongside the Concourse worker container | `nil` |
+| `worker.extraInitContainers` | Array of extra init containers to run before the Concourse worker container | `nil` |
+| `worker.priorityClassName` | Sets a PriorityClass for the worker pods | `nil` |
+| `worker.terminationGracePeriodSeconds` | Upper bound for graceful shutdown to allow the worker to drain its tasks | `60` |
+| `worker.tolerations` | Tolerations for the worker nodes | `[]` |
+| `worker.updateStrategy` | `OnDelete` or `RollingUpdate` (requires Kubernetes >= 1.7) | `RollingUpdate` |
+
+For configurable Concourse parameters, refer to [`values.yaml`](values.yaml)' `concourse` section. All parameters under this section are strictly mapped from the `concourse` binary commands.
+
+For example if one needs to configure the Concourse external URL, the param `concourse` -> `web` -> `externalUrl` should be set, which is equivalent to running the `concourse` binary as `concourse web --external-url`.
+
+For those sub-sections that have `enabled`, one needs to set `enabled` to be `true` to use the following params within the section.
+
+Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
+
+Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
 
 ```console
-helm install my-release -f values.yaml oci://registry-1.docker.io/bitnamicharts/opencart
+$ helm install my-release -f values.yaml concourse/concourse
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
 
-## Configuration and installation details
 
-### [Rolling VS Immutable tags](https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/)
+### Secrets
 
-It is strongly recommended to use immutable tags in a production environment. This ensures your deployment does not change automatically if the same tag is updated with a different image.
+For your convenience, this chart provides some default values for secrets, but it is recommended that you generate and manage these secrets outside the Helm chart.
 
-Bitnami will release a new chart updating its containers if a new version of the main container, significant changes, or critical vulnerabilities exist.
+To do that, set `secrets.create` to `false`, create files for each secret value, and turn it all into a Kubernetes [Secret](https://kubernetes.io/docs/concepts/configuration/secret/).
 
-### Image
+Be careful with introducing trailing newline characters; following the steps below ensures none end up in your secrets. First, perform the following to create the mandatory secret values:
 
-The `image` parameter allows specifying which image will be pulled for the chart.
-
-#### Private registry
-
-If you configure the `image` value to one in a private registry, you will need to [specify an image pull secret](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
-
-1. Manually create image pull secret(s) in the namespace. See [this YAML example reference](https://kubernetes.io/docs/concepts/containers/images/#creating-a-secret-with-a-docker-config). Consult your image registry's documentation about getting the appropriate secret.
-2. Note that the `imagePullSecrets` configuration value cannot currently be passed to helm using the `--set` parameter, so you must supply these using a `values.yaml` file, such as:
-
-    ```yaml
-    imagePullSecrets:
-      - name: SECRET_NAME
-    ```
-
-3. Install the chart
-
-### Setting Pod's affinity
-
-This chart allows you to set your custom affinity using the `affinity` parameter. Find more information about Pod's affinity in the [kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).
-
-As an alternative, you can use of the preset configurations for pod affinity, pod anti-affinity, and node affinity available at the [bitnami/common](https://github.com/bitnami/charts/tree/main/bitnami/common#affinities) chart. To do so, set the `podAffinityPreset`, `podAntiAffinityPreset`, or `nodeAffinityPreset` parameters.
-
-## Persistence
-
-The [Bitnami OpenCart](https://github.com/bitnami/containers/tree/main/bitnami/opencart) image stores the OpenCart data and configurations at the `/bitnami/opencart` path of the container.
-
-Persistent Volume Claims are used to keep the data across deployments. This is known to work in GCE, AWS, and minikube.
-See the [Parameters](#parameters) section to configure the PVC or to disable persistence.
-
-### Existing PersistentVolumeClaim
-
-1. Create the PersistentVolume
-2. Create the PersistentVolumeClaim
-3. Install the chart
-
-```console
-helm install my-release --set persistence.existingClaim=PVC_NAME oci://registry-1.docker.io/bitnamicharts/prestashop
+```sh
+# Create a directory to host the set of secrets that are
+# required for a working Concourse installation and get
+# into it.
+#
+mkdir concourse-secrets
+cd concourse-secrets
 ```
 
-### Host path
+Concourse needs three sets of key-pairs in order to work:
+- web key pair,
+- worker key pair, and
+- the session signing token.
 
-#### System compatibility
+You can generate all three key-pairs by following either of these two methods:
 
-- The local filesystem accessibility to a container in a pod with `hostPath` has been tested on OSX/MacOS with xhyve, and Linux with VirtualBox.
-- Windows has not been tested with the supported VM drivers. Minikube does however officially support [Mounting Host Folders](https://minikube.sigs.k8s.io/docs/handbook/mount/) per pod. Or you may manually sync your container whenever host files are changed with tools like [docker-sync](https://github.com/EugenMayer/docker-sync) or [docker-bg-sync](https://github.com/cweagans/docker-bg-sync).
+##### Concourse Binary
 
-#### Mounting steps
-
-1. The specified `hostPath` directory must already exist (create one if it does not).
-2. Install the chart
-
-    ```console
-    helm install my-release --set persistence.hostPath=/PATH/TO/HOST/MOUNT oci://registry-1.docker.io/bitnamicharts/prestashop
-    ```
-
-    This will mount the `prestashop-data` volume into the `hostPath` directory. The site data will be persisted if the mount path contains valid data, else the site data will be initialized at first launch.
-3. Because the container cannot control the host machine's directory permissions, you must set the PrestaShop file directory permissions yourself and disable or clear PrestaShop cache.
-
-## Troubleshooting
-
-Find more information about how to deal with common errors related to Bitnami's Helm charts in [this troubleshooting guide](https://docs.bitnami.com/general/how-to/troubleshoot-helm-chart-issues).
-
-## Upgrading
-
-### To 14.0.0
-
-This major release bumps the MariaDB version to 10.11. Follow the [upstream instructions](https://mariadb.com/kb/en/upgrading-from-mariadb-10-6-to-mariadb-10-11/) for upgrading from MariaDB 10.6 to 10.11. No major issues are expected during the upgrade.
-
-### To 13.0.0
-
-OpenCart version was bumped to its latest major, `4.x.x`. The most remarkable change is that the `/admin` folder has been renamed to `/administration` for security requirements. Though no incompatibilities are expected while upgrading from previous versions, OpenCart recommends backing up your application first before upgrading.
-
-### To 12.0.0
-
-This major release bumps the MariaDB version to 10.6. Follow the [upstream instructions](https://mariadb.com/kb/en/upgrading-from-mariadb-105-to-mariadb-106/) for upgrading from MariaDB 10.5 to 10.6. No major issues are expected during the upgrade.
-
-### To 11.0.0
-
-This major release renames several values in this chart and adds missing features, in order to be inline with the rest of assets in the Bitnami charts repository.
-
-Affected values:
-
-- `service.port` was deprecated. We recommend using `service.ports.http` instead.
-- `service.httpsPort` was deprecated. We recommend using `service.ports.https` instead.
-
-Additionally updates the MariaDB subchart to it newest major, 10.0.0, which contains similar changes. Check [MariaDB Upgrading Notes](https://github.com/bitnami/charts/tree/main/bitnami/mariadb#to-1000) for more information.
-
-### To 10.0.0
-
-This version standardizes the way of defining Ingress rules. When configuring a single hostname for the Ingress rule, set the `ingress.hostname` value. When defining more than one, set the `ingress.extraHosts` array. Apart from this case, no issues are expected to appear when upgrading.
-
-### To 9.0.0
-
-[On November 13, 2020, Helm v2 support was formally finished](https://github.com/helm/charts#status-of-the-project), this major version is the result of the required changes applied to the Helm Chart to be able to incorporate the different features added in Helm v3 and to be consistent with the Helm project itself regarding the Helm v2 EOL.
-
-#### What changes were introduced in this major version?
-
-- Previous versions of this Helm Chart use `apiVersion: v1` (installable by both Helm 2 and 3), this Helm Chart was updated to `apiVersion: v2` (installable by Helm 3 only). [Here](https://helm.sh/docs/topics/charts/#the-apiversion-field) you can find more information about the `apiVersion` field.
-- Move dependency information from the *requirements.yaml* to the *Chart.yaml*
-- After running `helm dependency update`, a *Chart.lock* file is generated containing the same structure used in the previous *requirements.lock*
-- The different fields present in the *Chart.yaml* file has been ordered alphabetically in a homogeneous way for all the Bitnami Helm Charts
-
-#### Considerations when upgrading to this version
-
-- If you want to upgrade to this version from a previous one installed with Helm v3, you shouldn't face any issues
-- If you want to upgrade to this version using Helm v2, this scenario is not supported as this version doesn't support Helm v2 anymore
-- If you installed the previous version with Helm v2 and wants to upgrade to this version with Helm v3, please refer to the [official Helm documentation](https://helm.sh/docs/topics/v2_v3_migration/#migration-use-cases) about migrating from Helm v2 to v3
-
-#### Useful links
-
-- <https://docs.bitnami.com/tutorials/resolve-helm2-helm3-post-migration-issues/>
-- <https://helm.sh/docs/topics/v2_v3_migration/>
-- <https://helm.sh/blog/migrate-from-helm-v2-to-helm-v3/>
-
-### To 8.0.0
-
-**Important:** Under no circumstance should you run `helm upgrade` to `8.0.0` or you may suffer unrecoverable data loss of your site's data.
-
-This release includes several breaking changes which are listed below. To upgrade to `8.0.0`, we recommend to install a new OpenCart chart, and migrate your OpenCart site using the application's [Backup & Restore tool](http://docs.opencart.com/en-gb/tools/backup/).
-
-> NOTE: It is highly recommended to create a backup of your database before migrating your site. The steps below would be only valid if your application (e.g. any plugins or custom code) is compatible with MariaDB 10.5.x
-Obtain the credentials and the name of the PVC used to hold the MariaDB data on your current release:
-
-```console
-export OPENCART_PASSWORD=$(kubectl get secret --namespace default opencart -o jsonpath="{.data.opencart-password}" | base64 -d)
-export MARIADB_ROOT_PASSWORD=$(kubectl get secret --namespace default opencart-mariadb -o jsonpath="{.data.mariadb-root-password}" | base64 -d)
-export MARIADB_PASSWORD=$(kubectl get secret --namespace default opencart-mariadb -o jsonpath="{.data.mariadb-password}" | base64 -d)
-export MARIADB_PVC=$(kubectl get pvc -l app.kubernetes.io/instance=opencart,app.kubernetes.io/name=mariadb,app.kubernetes.io/component=primary -o jsonpath="{.items[0].metadata.name}")
+```sh
+docker run -v $PWD:/keys --rm -it concourse/concourse generate-key -t rsa -f /keys/session-signing-key
+docker run -v $PWD:/keys --rm -it concourse/concourse generate-key -t ssh -f /keys/worker-key
+docker run -v $PWD:/keys --rm -it concourse/concourse generate-key -t ssh -f /keys/host-key
+rm session-signing-key.pub
 ```
 
-#### New volume mount locations
+##### ssh-keygen
 
-Locations for volume mounts have been changed. Now, OpenCart's persisted volume will contain the following directories:
-
-- `opencart`: Persisted OpenCart files
-- `opencart_storage`: OpenCart storage files
-
-These folders will be mounted to the respective sub-paths in `/bitnami`. Before, the entire volume was mounted to `/bitnami/opencart`.
-
-#### Support for non-root user approach
-
-The [Bitnami OpenCart](https://github.com/bitnami/containers/tree/main/bitnami/opencart) image was updated to support and enable the "non-root" user approach
-
-If you want to continue to run the container image as the `root` user, you need to set `podSecurityContext.enabled=false` and `containerSecurity.context.enabled=false`.
-
-This upgrade also adapts the chart to the latest Bitnami good practices. Check the Parameters section for more information.
-
-#### MariaDB dependency update
-
-MariaDB dependency version was bumped to a new major version that introduces several incompatilibites. Therefore, backwards compatibility is not guaranteed unless an external database is used. Check [MariaDB Upgrading Notes](https://github.com/bitnami/charts/tree/main/bitnami/mariadb#to-800) for more information.
-
-### To 7.0.0
-
-Helm performs a lookup for the object based on its group (apps), version (v1), and kind (Deployment). Also known as its GroupVersionKind, or GVK. Changing the GVK is considered a compatibility breaker from Kubernetes' point of view, so you cannot "upgrade" those objects to the new GVK in-place. Earlier versions of Helm 3 did not perform the lookup correctly which has since been fixed to match the spec.
-
-In <https://github.com/helm/charts/pull/17302> the `apiVersion` of the deployment resources was updated to `apps/v1` in tune with the api's deprecated, resulting in compatibility breakage.
-
-This major version signifies this change.
-
-### To 3.0.0
-
-Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
-Use the workaround below to upgrade from versions previous to 3.0.0. The following example assumes that the release name is opencart:
-
-```console
-kubectl patch deployment opencart-opencart --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
-kubectl delete statefulset opencart-mariadb --cascade=false
+```sh
+ssh-keygen -t rsa -f host-key  -N '' -m PEM
+ssh-keygen -t rsa -f worker-key  -N '' -m PEM
+ssh-keygen -t rsa -f session-signing-key  -N '' -m PEM
+rm session-signing-key.pub
 ```
 
-## Community supported solution
+#### Optional Features
 
-Please, note this Helm chart is a community-supported solution. This means that the Bitnami team is not actively working on new features/improvements nor providing support through GitHub Issues for this Helm chart. Any new issue will stay open for 20 days to allow the community to contribute, after 15 days without activity the issue will be marked as stale being closed after 5 days.
+You'll also need to create/copy secret values for optional features. See [templates/web-secrets.yaml](templates/web-secrets.yaml) and [templates/worker-secrets.yaml](templates/worker-secrets.yaml)  for possible values.
 
-The Bitnami team will review any PR that is created, feel free to create a PR if you find any issue or want to implement a new feature.
+In the example below, we are not using the [PostgreSQL](#postgresql) chart dependency, and so we must set `postgresql-user` and `postgresql-password` secrets.
 
-New versions are not going to be affected. Once a new version is released in the upstream project, the Bitnami container image will be updated to use the latest version.
+```sh
+# Still within the directory where our secrets exist,
+# copy a postgres user to clipboard and paste it to file.
+#
+printf "%s" "$(pbpaste)" > postgresql-user
 
-## License
+# Copy a postgres password to clipboard and paste it to file
+#
+printf "%s" "$(pbpaste)" > postgresql-password
 
-Copyright &copy; 2023 Bitnami
+# Copy Github client id and secrets to clipboard and paste to files
+#
+printf "%s" "$(pbpaste)" > github-client-id
+printf "%s" "$(pbpaste)" > github-client-secret
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+# Set an encryption key for DB encryption at rest
+#
+printf "%s" "$(openssl rand -base64 24)" > encryption-key
 
-<http://www.apache.org/licenses/LICENSE-2.0>
+# Create a local user for concourse.
+#
+printf "%s:%s" "concourse" "$(openssl rand -base64 24)" > local-users
+```
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+#### Creating the Secrets
+
+Make a directory for each secret and then move generated credentials into appropriate directories.
+```console
+mkdir concourse web worker
+
+# worker secrets
+mv host-key.pub worker/host-key-pub
+mv worker-key.pub worker/worker-key-pub
+mv worker-key worker/worker-key
+
+# web secrets
+mv session-signing-key web/session-signing-key
+mv host-key web/host-key
+cp worker/worker-key-pub web/worker-key-pub
+
+# other concourse secrets (there may be more than the 3 listed below)
+mv encryption-key concourse/encryption-key
+mv postgresql-password concourse/postgresql-password
+mv postgresql-user concourse/postgresql-user
+```
+
+Then create the secrets from each of the 3 directories:
+
+```console
+kubectl create secret generic [my-release]-worker --from-file=worker/
+
+kubectl create secret generic [my-release]-web --from-file=web/
+
+kubectl create secret generic [my-release]-concourse --from-file=concourse/
+```
+
+Make sure you clean up after yourself.
+
+
+### Persistence
+
+This chart mounts a Persistent Volume for each Concourse Worker.
+
+The volume is created using dynamic volume provisioning.
+
+If you want to disable it or change the persistence properties, update the `persistence` section of your custom `values.yaml` file:
+
+```yaml
+## Persistent Volume Storage configuration.
+## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+##
+persistence:
+  ## Enable persistence using Persistent Volume Claims.
+  ##
+  enabled: true
+
+  ## Worker Persistence configuration.
+  ##
+  worker:
+    ## Persistent Volume Storage Class.
+    ##
+    class: generic
+
+    ## Persistent Volume Access Mode.
+    ##
+    accessMode: ReadWriteOnce
+
+    ## Persistent Volume Storage Size.
+    ##
+    size: "20Gi"
+```
+
+It is highly recommended to use Persistent Volumes for Concourse Workers; otherwise, the Concourse volumes managed by the Worker are stored in an [`emptyDir`](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) volume on the Kubernetes node's disk. This will interfere with Kubernete's [ImageGC](https://kubernetes.io/docs/concepts/cluster-administration/kubelet-garbage-collection/#image-collection) and the node's disk will fill up as a result.
+
+
+### Ingress TLS
+
+If your cluster allows automatic creation/retrieval of TLS certificates (e.g. [cert-manager](https://github.com/jetstack/cert-manager/)), please refer to the documentation for that mechanism.
+
+To manually configure TLS, first create/retrieve a key & certificate pair for the address(es) you wish to protect. Then create a TLS secret in the namespace:
+
+```console
+kubectl create secret tls concourse-web-tls --cert=path/to/tls.cert --key=path/to/tls.key
+```
+
+Include the secret's name, along with the desired hostnames, in the `web.ingress.tls` section of your custom `values.yaml` file:
+
+```yaml
+## Configuration values for Concourse Web components.
+##
+web:
+  ## Ingress configuration.
+  ## ref: https://kubernetes.io/docs/user-guide/ingress/
+  ##
+  ingress:
+    ## Enable ingress.
+    ##
+    enabled: true
+
+    ## Hostnames.
+    ## Either `hosts` or `rulesOverride` must be provided if Ingress is enabled.
+    ## `hosts` sets up the Ingress with default rules per provided hostname.
+    ##
+    hosts:
+      - concourse.domain.com
+
+    ## Ingress rules override
+    ## Either `hosts` or `rulesOverride` must be provided if Ingress is enabled.
+    ## `rulesOverride` allows the user to define the full set of ingress rules, for more complex Ingress setups.
+    ##
+    ##
+    rulesOverride:
+      - host: concourse.domain.com
+        http:
+          paths:
+            - path: '/*'
+              backend:
+                serviceName: "ssl-redirect"
+                servicePort: "use-annotation"
+            - path: '/*'
+              backend:
+                serviceName: "concourse-web"
+                servicePort: atc
+
+    ## TLS configuration.
+    ## Secrets must be manually created in the namespace.
+    ##
+    tls:
+      - secretName: concourse-web-tls
+        hosts:
+          - concourse.domain.com
+```
+
+### PostgreSQL
+
+By default, this chart uses a PostgreSQL database deployed as a chart dependency (see the [PostgreSQL chart](https://github.com/bitnami/charts/blob/master/bitnami/postgresql/README.md)), with default values for username, password, and database name. These can be modified by setting the `postgresql.auth.*` values.
+
+You can also bring your own PostgreSQL. To do so, set `postgresql.enabled` to `false`, and then configure Concourse's `postgres` values (`concourse.web.postgres.*`).
+
+Note that some values get set in the form of secrets, like `postgresql-user`, `postgresql-password`, and others (see [templates/web-secrets.yaml](templates/web-secrets.yaml) for possible values and the [secrets section](#secrets) on this README for guidance on how to set those secrets).
+
+### Credential Management
+
+Pipelines usually need credentials to do things. Concourse supports the use of a [Credential Manager](https://concourse-ci.org/creds.html) so your pipelines can contain references to secrets instead of the actual secret values. You can't use more than one credential manager at a time.
+
+#### Kubernetes Secrets
+
+By default, this chart uses Kubernetes Secrets as a credential manager.
+
+For a given Concourse *team*, a pipeline looks for secrets in a namespace named `[namespacePrefix][teamName]`. The namespace prefix is the release name followed by a hyphen by default, and can be overridden with the value `concourse.web.kubernetes.namespacePrefix`. Each team listed under `concourse.web.kubernetes.teams` will have a namespace created for it, and the namespace remains after deletion of the release unless you set `concourse.web.kubernetes.keepNamespace` to `false`. By default, a namespace will be created for the `main` team.
+
+The service account used by Concourse must have `get` access to secrets in that namespace. When `rbac.create` is true, this access is granted for each team listed under `concourse.web.kubernetes.teams`.
+
+Here are some examples of the lookup heuristics, given release name `concourse`:
+
+In team `accounting-dev`, pipeline `my-app`; the expression `((api-key))` resolves to:
+
+1. the secret value in namespace: `concourse-accounting-dev` secret: `my-app.api-key`, key: `value`
+2. and if not found, is the value in namespace: `concourse-accounting-dev` secret: `api-key`, key: `value`
+
+In team accounting-dev, pipeline `my-app`, the expression `((common-secrets.api-key))` resolves to:
+
+1. the secret value in namespace: `concourse-accounting-dev` secret: `my-app.common-secrets`, key: `api-key`
+2. and if not found, is the value in namespace: `concourse-accounting-dev` secret: `common-secrets`, key: `api-key`
+
+Be mindful of your team and pipeline names, to ensure they can be used in namespace and secret names, e.g. no underscores.
+
+To test, create a secret in namespace `concourse-main`:
+
+```console
+kubectl create secret generic hello --from-literal 'value=Hello world!'
+```
+
+Then `fly set-pipeline` with the following pipeline, and trigger it:
+
+```yaml
+jobs:
+- name: hello-world
+  plan:
+  - task: say-hello
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: alpine}
+      params:
+        HELLO: ((hello))
+      run:
+        path: /bin/sh
+        args: ["-c", "echo $HELLO"]
+```
+
+#### Hashicorp Vault
+
+To use Vault, set `concourse.web.kubernetes.enabled` to false, and set the following values:
+
+
+```yaml
+## Configuration values for the Credential Manager.
+## ref: https://concourse-ci.org/creds.html
+##
+concourse:
+  web:
+    vault:
+      ## Use Hashicorp Vault for the Credential Manager.
+      ##
+      enabled: true
+
+      ## URL pointing to vault addr (i.e. http://vault:8200).
+      ##
+      url:
+
+      ## vault path under which to namespace credential lookup, defaults to /concourse.
+      ##
+      pathPrefix:
+```
+
+#### Credhub
+
+To use Credhub, set `concourse.web.kubernetes.enabled` to false, and consider the following values:
+
+```yaml
+## Configuration for using Credhub as a credential manager.
+## Ref: https://concourse-ci.org/credhub-credential-manager.html
+##
+concourse:
+  web:
+    credhub:
+      ## Enable the use of Credhub as a credential manager.
+      ##
+      enabled: true
+
+      ## CredHub server address used to access secrets
+      ## Example: https://credhub.example.com
+      ##
+      url:
+
+      ## Path under which to namespace credential lookup. (default: /concourse)
+      ##
+      pathPrefix:
+
+      ## Enables using a CA Certificate
+      ##
+      useCaCert: false
+
+      ## Enables insecure SSL verification.
+      ##
+      insecureSkipVerify: false
+```
+
+#### Conjur
+
+To use Conjur, set `concourse.web.kubernetes.enabled` to false, and set the following values:
+
+```yaml
+## Configuration for using Conjur as a credential manager.
+## Ref: https://concourse-ci.org/conjur-credential-manager.html
+##
+concourse:
+  web:
+    conjur:
+      ## Enable the use of Conjur as a credential manager.
+      ##
+      enabled: true
+
+      ## Conjur server address used to access secrets
+      ## Example: https://conjur.example.com
+      ##
+      applianceUrl:
+
+      ## Base path used to locate a vault or safe-level secret
+      ## Default: vaultName/{{.Secret}})
+      ##
+      secretTemplate:
+
+      ## Base path used to locate a team-level secret
+      ## Default: concourse/{{.Team}}/{{.Secret}}
+      ##
+      teamSecretTemplate:
+
+      ## Base path used to locate a pipeline-level secret
+      ## Default: concourse/{{.Team}}/{{.Pipeline}}/{{.Secret}}
+      ##
+      pipelineSecretTemplate:
+secrets:
+  # Org account.
+  conjurAccount:
+
+  # Host username. E.g host/concourse
+  conjurAuthnLogin:
+
+  # Api key related to the host.
+  conjurAuthnApiKey:
+
+  # Token file used if conjur instance is running in k8s or iam. E.g. /path/to/token_file
+  conjurAuthnTokenFile:
+
+  # CA Certificate to specify if conjur instance is deployed with a self-signed cert
+  conjurCACert:
+```
+
+You can specify either `conjurAuthnApiKey` that corresponds to the Conjur host OR `conjurAuthnTokenFile` if running in K8s or IAM.
+
+If your Conjur instance is deployed with a self-signed SSL certifcate, you will need to set `conjurCACert` property in your `values.yaml`.
+
+#### AWS Systems Manager Parameter Store (SSM)
+
+To use SSM, set `concourse.web.kubernetes.enabled` to false, and set `concourse.web.awsSsm.enabled` to true.
+
+Authentication can be configured to use an access key and secret key as well as a session token. This is done by setting `concourse.web.awsSsm.keyAuth.enabled` to `true`. Alternatively, if it set to `false`, AWS IAM role based authentication (instance or pod credentials) is assumed. To use a session token, `concourse.web.awsSsm.useSessionToken` should be set to `true`. The secret values can be managed using the values specified in this helm chart or separately. For more details, see https://concourse-ci.org/creds.html#ssm.
+
+For a given Concourse *team*, a pipeline looks for secrets in SSM using either `/concourse/{team}/{secret}` or `/concourse/{team}/{pipeline}/{secret}`; the patterns can be overridden using the `concourse.web.awsSsm.teamSecretTemplate` and `concourse.web.awsSsm.pipelineSecretTemplate` settings.
+
+Concourse requires AWS credentials which are able to read from SSM for this feature to function. Credentials can be set in the `secrets.awsSsm*` settings; if your cluster is running in a different AWS region, you may also need to set `concourse.web.awsSsm.region`.
+
+The minimum IAM policy you need to use SSM with Concourse is:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "kms:Decrypt",
+      "Resource": "<kms-key-arn>",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "ssm:GetParameter*",
+      "Resource": "<...arn...>:parameter/concourse/*",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+Where `<kms-key-arn>` is the ARN of the KMS key used to encrypt the secrets in Parameter Store, and the `<...arn...>` should be replaced with a correct ARN for your account and region's Parameter Store.
+
+#### AWS Secrets Manager
+
+To use Secrets Manager, set `concourse.web.kubernetes.enabled` to false, and set `concourse.web.awsSecretsManager.enabled` to true.
+
+Authentication can be configured to use an access key and secret key as well as a session token. This is done by setting `concourse.web.awsSecretsManager.keyAuth.enabled` to `true`. Alternatively, if it set to `false`, AWS IAM role based authentication (instance or pod credentials) is assumed. To use a session token, `concourse.web.awsSecretsManger.useSessionToken` should be set to `true`. The secret values can be managed using the values specified in this helm chart or separately. For more details, see https://concourse-ci.org/creds.html#asm.
+
+For a given Concourse *team*, a pipeline looks for secrets in Secrets Manager using either `/concourse/{team}/{secret}` or `/concourse/{team}/{pipeline}/{secret}`; the patterns can be overridden using the `concourse.web.awsSecretsManager.teamSecretTemplate` and `concourse.web.awsSecretsManager.pipelineSecretTemplate` settings.
+
+Concourse requires AWS credentials which are able to read from Secrets Manager for this feature to function. Credentials can be set in the `secrets.awsSecretsmanager*` settings; if your cluster is running in a different AWS region, you may also need to set `concourse.web.awsSecretsManager.region`.
+
+The minimum IAM policy you need to use Secrets Manager with Concourse is:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowAccessToSecretManagerParameters",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:ListSecrets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowAccessGetSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:::secret:/concourse/*"
+      ]
+    }
+  ]
+}
+```
+
+## Developing
+
+When adding a new Concourse flag, don't assign a `default` value in the `values.yml` that mirrors a default set by the Concourse binary.
+
+Instead, you may add a comment specifying the default, such as
+
+  ```
+      ## pipeline-specific template for SSM parameters, defaults to: /concourse/{{.Team}}/{{.Pipeline}}/{{.Secret}}
+      ##
+      pipelineSecretTemplate:
+
+  ```
+
+This prevents the behaviour drifting from that of the binary in case the binary's default values change.
+
+We understand that the comment stating the binary's default can become stale. The current solution is a suboptimal one. It may be improved in the future by generating a list of the default values from the binary.

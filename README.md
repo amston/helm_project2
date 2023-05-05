@@ -1,129 +1,349 @@
-# Zookeeper
+# Prometheus
 
-基于bitnami zookeeper
+[Prometheus](https://prometheus.io/), a [Cloud Native Computing Foundation](https://cncf.io/) project, is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
 
-# ZooKeeper
+This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-[ZooKeeper](https://zookeeper.apache.org/) 是用于维护配置信息、命名、提供分布式同步和提供组服务的集中服务。所有这些类型的服务都被分布式应用程序以某种形式或其他形式使用。
+## Prerequisites
 
-## 安装
+- Kubernetes 1.16+
+- Helm 3.7+
 
-```console
-$ helm repo add bitnami https://charts.bitnami.com/bitnami
-$ helm install bitnami/zookeeper
-```
-
-## 需求
-
-- Kubernetes 1.12+
-- Helm 2.11+ or Helm 3.0-beta3+
-- PV provisioner support in the underlying infrastructure
-
-## 参数
-
-| Parameter                              | Description                                                                                                                                               | Default                                                      |  |
-|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|--|
-| `global.imageRegistry`                 | Global Docker image registry                                                                                                                              | `nil`                                                        |  |
-| `global.imagePullSecrets`              | Global Docker registry secret names as an array                                                                                                           | `[]` (does not add image pull secrets to deployed pods)      |  |
-| `global.storageClass`                  | Global storage class for dynamic provisioning                                                                                                             | `nil`                                                        |  |
-| `image.registry`                       | ZooKeeper image registry                                                                                                                                  | `docker.io`                                                  |  |
-| `image.repository`                     | ZooKeeper Image name                                                                                                                                      | `bitnami/zookeeper`                                          |  |
-| `image.tag`                            | ZooKeeper Image tag                                                                                                                                       | `{TAG_NAME}`                                                 |  |
-| `image.pullPolicy`                     | ZooKeeper image pull policy                                                                                                                               | `IfNotPresent`                                               |  |
-| `image.pullSecrets`                    | Specify docker-registry secret names as an array                                                                                                          | `[]` (does not add image pull secrets to deployed pods)      |  |
-| `image.debug`                          | Specify if debug values should be set                                                                                                                     | `false`                                                      |  |
-| `nameOverride`                         | String to partially override zookeeper.fullname template with a string (will append the release name)                                                     | `nil`                                                        |  |
-| `fullnameOverride`                     | String to fully override zookeeper.fullname template with a string                                                                                        | `nil`                                                        |  |
-| `volumePermissions.enabled`            | Enable init container that changes volume permissions in the data directory (for cases where the default k8s `runAsUser` and `fsUser` values do not work) | `false`                                                      |  |
-| `volumePermissions.image.registry`     | Init container volume-permissions image registry                                                                                                          | `docker.io`                                                  |  |
-| `volumePermissions.image.repository`   | Init container volume-permissions image name                                                                                                              | `bitnami/minideb`                                            |  |
-| `volumePermissions.image.tag`          | Init container volume-permissions image tag                                                                                                               | `stretch`                                                    |  |
-| `volumePermissions.image.pullPolicy`   | Init container volume-permissions image pull policy                                                                                                       | `Always`                                                     |  |
-| `volumePermissions.resources`          | Init container resource requests/limit                                                                                                                    | `nil`                                                        |  |
-| `updateStrategy`                       | Update strategies                                                                                                                                         | `RollingUpdate`                                              |  |
-| `podDisruptionBudget.maxUnavailable`   | Max number of pods down simultaneously                                                                                                                    | `1`                                                          |  |
-| `rollingUpdatePartition`               | Partition update strategy                                                                                                                                 | `nil`                                                        |  |
-| `clusterDomain`                        | Kubernetes cluster domain                                                                                                                                 | `cluster.local`                                              |  |
-| `podManagementPolicy`                  | Pod management policy                                                                                                                                     | `Parallel`                                                   |  |
-| `replicaCount`                         | Number of ZooKeeper nodes                                                                                                                                 | `1`                                                          |  |
-| `tickTime`                             | Basic time unit in milliseconds used by ZooKeeper for heartbeats                                                                                          | `2000`                                                       |  |
-| `initLimit`                            | Time the ZooKeeper servers in quorum have to connect to a leader                                                                                          | `10`                                                         |  |
-| `syncLimit`                            | How far out of date a server can be from a leader                                                                                                         | `5`                                                          |  |
-| `maxClientCnxns`                       | Number of concurrent connections that a single client may make to a single member                                                                         | `60`                                                         |  |
-| `fourlwCommandsWhitelist`              | A list of comma separated Four Letter Words commands to use                                                                                               | `srvr, mntr`                                                 |  |
-| `allowAnonymousLogin`                  | Allow to accept connections from unauthenticated users                                                                                                    | `yes`                                                        |  |
-| `auth.existingSecret`                  | Use existing secret (ignores previous password)                                                                                                           | `nil`                                                        |  |
-| `auth.enabled`                         | Enable ZooKeeper auth                                                                                                                                     | `false`                                                      |  |
-| `auth.clientUser`                      | User that will use ZooKeeper clients to auth                                                                                                              | `nil`                                                        |  |
-| `auth.clientPassword`                  | Password that will use ZooKeeper clients to auth                                                                                                          | `nil`                                                        |  |
-| `auth.serverUsers`                     | List of user to be created                                                                                                                                | `nil`                                                        |  |
-| `auth.serverPasswords`                 | List of passwords to assign to users when created                                                                                                         | `nil`                                                        |  |
-| `heapSize`                             | Size in MB for the Java Heap options (Xmx and XMs)                                                                                                        | `[]`                                                         |  |
-| `logLevel`                             | Log level of ZooKeeper server                                                                                                                             | `ERROR`                                                      |  |
-| `jvmFlags`                             | Default JVMFLAGS for the ZooKeeper process                                                                                                                | `nil`                                                        |  |
-| `config`                               | Configure ZooKeeper with a custom zoo.conf file                                                                                                           | `nil`                                                        |  |
-| `service.type`                         | Kubernetes Service type                                                                                                                                   | `ClusterIP`                                                  |  |
-| `service.port`                         | ZooKeeper port                                                                                                                                            | `2181`                                                       |  |
-| `service.followerPort`                 | ZooKeeper follower port                                                                                                                                   | `2888`                                                       |  |
-| `service.electionPort`                 | ZooKeeper election port                                                                                                                                   | `3888`                                                       |  |
-| `service.publishNotReadyAddresses`     | If the ZooKeeper headless service should publish DNS records for not ready pods                                                                           | `true`                                                       |  |
-| `securityContext.enabled`              | Enable security context (ZooKeeper master pod)                                                                                                            | `true`                                                       |  |
-| `securityContext.fsGroup`              | Group ID for the container (ZooKeeper master pod)                                                                                                         | `1001`                                                       |  |
-| `securityContext.runAsUser`            | User ID for the container (ZooKeeper master pod)                                                                                                          | `1001`                                                       |  |
-| `persistence.enabled`                  | Enable persistence using PVC                                                                                                                              | `true`                                                       |  |
-| `persistence.storageClass`             | PVC Storage Class for ZooKeeper volume                                                                                                                    | `nil`                                                        |  |
-| `persistence.accessModes`              | PVC Access Mode for ZooKeeper volume                                                                                                                      | `ReadWriteOnce`                                              |  |
-| `persistence.size`                     | PVC Storage Request for ZooKeeper volume                                                                                                                  | `8Gi`                                                        |  |
-| `persistence.annotations`              | Annotations for the PVC                                                                                                                                   | `{}`                                                         |  |
-| `nodeSelector`                         | Node labels for pod assignment                                                                                                                            | `{}`                                                         |  |
-| `tolerations`                          | Toleration labels for pod assignment                                                                                                                      | `[]`                                                         |  |
-| `affinity`                             | Map of node/pod affinities                                                                                                                                | `{}`                                                         |  |
-| `resources`                            | CPU/Memory resource requests/limits                                                                                                                       | Memory: `256Mi`, CPU: `250m`                                 |  |
-| `livenessProbe.enabled`                | Would you like a livenessProbe to be enabled                                                                                                              | `true`                                                       |  |
-| `livenessProbe.initialDelaySeconds`    | Delay before liveness probe is initiated                                                                                                                  | 30                                                           |  |
-| `livenessProbe.periodSeconds`          | How often to perform the probe                                                                                                                            | 10                                                           |  |
-| `livenessProbe.timeoutSeconds`         | When the probe times out                                                                                                                                  | 5                                                            |  |
-| `livenessProbe.failureThreshold`       | Minimum consecutive failures for the probe to be considered failed after having succeeded                                                                 | 6                                                            |  |
-| `livenessProbe.successThreshold`       | Minimum consecutive successes for the probe to be considered successful after having failed                                                               | 1                                                            |  |
-| `readinessProbe.enabled`               | Would you like a readinessProbe to be enabled                                                                                                             | `true`                                                       |  |
-| `readinessProbe.initialDelaySeconds`   | Delay before liveness probe is initiated                                                                                                                  | 5                                                            |  |
-| `readinessProbe.periodSeconds`         | How often to perform the probe                                                                                                                            | 10                                                           |  |
-| `readinessProbe.timeoutSeconds`        | When the probe times out                                                                                                                                  | 5                                                            |  |
-| `readinessProbe.failureThreshold`      | Minimum consecutive failures for the probe to be considered failed after having succeeded                                                                 | 6                                                            |  |
-| `readinessProbe.successThreshold`      | Minimum consecutive successes for the probe to be considered successful after having failed                                                               | 1                                                            |  |
-| `metrics.enabled`                      | Start a side-car prometheus exporter                                                                                                                      | `false`                                                      |  |
-| `metrics.image.registry`               | ZooKeeper exporter image registry                                                                                                                         | `docker.io`                                                  |  |
-| `metrics.image.repository`             | ZooKeeper exporter image name                                                                                                                             | `bitnami/zookeeper-exporter`                                 |  |
-| `metrics.image.tag`                    | ZooKeeper exporter image tag                                                                                                                              | `{TAG_NAME}`                                                 |  |
-| `metrics.image.pullPolicy`             | Image pull policy                                                                                                                                         | `IfNotPresent`                                               |  |
-| `metrics.image.pullSecrets`            | Specify docker-registry secret names as an array                                                                                                          | `nil`                                                        |  |
-| `metrics.podLabels`                    | Additional labels for Metrics exporter pod                                                                                                                | `{}`                                                         |  |
-| `metrics.podAnnotations`               | Additional annotations for Metrics exporter pod                                                                                                           | `{prometheus.io/scrape: "true", prometheus.io/port: "9141"}` |  |
-| `metrics.resources`                    | Exporter resource requests/limit                                                                                                                          | Memory: `256Mi`, CPU: `100m`                                 |  |
-| `metrics.tolerations`                  | Exporter toleration labels for pod assignment                                                                                                             | `[]`                                                         |  |
-| `metrics.nodeSelector`                 | Node labels for pod assignment                                                                                                                            | `{}`                                                         |  |
-| `metrics.affinity`                     | Map of node/pod affinities                                                                                                                                | `{}`                                                         |  |
-| `metrics.timeoutSeconds`               | Timeout in seconds the exporter uses to scrape its targets                                                                                                | 3                                                            |  |
-| `metrics.serviceMonitor.enabled`       | if `true`, creates a Prometheus Operator ServiceMonitor (also requires `metrics.enabled` to be `true`)                                                    | `false`                                                      |  |
-| `metrics.serviceMonitor.namespace`     | Namespace in which Prometheus is running                                                                                                                  | `nil`                                                        |  |
-| `metrics.serviceMonitor.interval`      | Interval at which metrics should be scraped.                                                                                                              | `nil` (Prometheus Operator default value)                    |  |
-| `metrics.serviceMonitor.scrapeTimeout` | Timeout after which the scrape is ended                                                                                                                   | `nil` (Prometheus Operator default value)                    |  |
-| `metrics.serviceMonitor.selector`      | Prometheus instance selector labels                                                                                                                       | `nil`                                                        |  |
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+## Get Repository Info
 
 ```console
-$ helm install --name my-release \
-  --set auth.clientUser=newUser \
-    bitnami/zookeeper
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The above command sets the ZooKeeper user to `newUser`.
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
+## Install Chart
+
+Start from Version 16.0, Prometheus chart required Helm 3.7+ in order to install successfully. Please check your Helm chart version before installation.
 
 ```console
-$ helm install --name my-release -f values.yaml bitnami/zookeeper
+helm install [RELEASE_NAME] prometheus-community/prometheus
 ```
 
-> **Tip**: You can use the default [values.yaml](values.yaml)
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Dependencies
+
+By default this chart installs additional, dependent charts:
+
+- [alertmanager](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager)
+- [kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
+- [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
+- [prometheus-pushgateway](https://github.com/walker-tom/helm-charts/tree/main/charts/prometheus-pushgateway)
+
+To disable the dependency during installation, set `alertmanager.enabled`, `kube-state-metrics.enabled`, `prometheus-node-exporter.enabled` and `prometheus-pushgateway.enabled` to `false`.
+
+_See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
+
+## Uninstall Chart
+
+```console
+helm uninstall [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Updating values.schema.json
+
+A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file has been added to validate chart values. When `values.yaml` file has a structure change (i.e. add a new field, change value type, etc.), modify `values.schema.json` file manually or run `helm schema-gen values.yaml > values.schema.json` to ensure the schema is aligned with the latest values. Refer to [helm plugin `helm-schema-gen`](https://github.com/karuppiah7890/helm-schema-gen) for plugin installation instructions.
+
+## Upgrading Chart
+
+```console
+helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 22.0
+
+The `app.kubernetes.io/version` label has been removed from the pod selector.
+
+Therefore, you must delete the previous StatefulSet or Deployment before upgrading. Performing this operation will cause **Prometheus to stop functioning** until the upgrade is complete.
+
+```console
+kubectl delete deploy,sts -l app.kubernetes.io/name=prometheus
+```
+
+### To 21.0
+
+The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+Specifically, labels mapping is listed below:
+
+| OLD                | NEW                          |
+|--------------------|------------------------------|
+|heritage            | app.kubernetes.io/managed-by |
+|chart               | helm.sh/chart                |
+|[container version] | app.kubernetes.io/version    |
+|app                 | app.kubernetes.io/name       |
+|release             | app.kubernetes.io/instance   |
+
+Therefore, depending on the way you've configured the chart, the previous StatefulSet or Deployment need to be deleted before upgrade.
+
+If `runAsStatefulSet: false` (this is the default):
+
+```console
+kubectl delete deploy -l app=prometheus
+```
+
+If `runAsStatefulSet: true`:
+
+```console
+kubectl delete sts -l app=prometheus
+```
+
+After that do the actual upgrade:
+
+```console
+helm upgrade -i prometheus prometheus-community/prometheus
+```
+
+### To 20.0
+
+The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
+Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extea command-line arguments.
+
+### To 19.0
+
+Prometheus has been updated to version v2.40.5.
+
+Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
+
+The condition in Chart.yaml to disable kube-state-metrics has been changed from `kubeStateMetrics.enabled` to `kube-state-metrics.enabled`
+
+The Docker image tag is used from appVersion field in Chart.yaml by default.
+
+Unused subchart configs has been removed and subchart config is now on the bottom of the config file.
+
+If Prometheus is used as deployment the updatestrategy has been changed to "Recreate" by default, so Helm updates work out of the box.
+
+`.Values.server.extraTemplates` & `.Values.server.extraObjects` has been removed in favour of `.Values.extraManifests`, which can do the same.
+
+`.Values.server.enabled` has been removed as it's useless now that all components are created by subcharts.
+
+All files in `templates/server` directory has been moved to `templates` directory.
+
+```bash
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 19.0.0
+```
+
+### To 18.0
+
+Version 18.0.0 uses alertmanager service from the [alertmanager chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager). If you've made some config changes, please check the old `alertmanager` and the new `alertmanager` configuration section in values.yaml for differences.
+
+Note that the `configmapReload` section for `alertmanager` was moved out of dedicated section (`configmapReload.alertmanager`) to alertmanager embedded (`alertmanager.configmapReload`).
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 17.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 18.0.0
+```
+
+### To 17.0
+
+Version 17.0.0 uses pushgateway service from the [prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 16.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 17.0.0
+```
+
+### To 16.0
+
+Starting from version 16.0 embedded services (like alertmanager, node-exporter etc.) are moved out of Prometheus chart and the respecting charts from this repository are used as dependencies. Version 16.0.0 moves node-exporter service to [prometheus-node-exporter chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter). If you've made some config changes, please check the old `nodeExporter` and the new `prometheus-node-exporter` configuration section in values.yaml for differences.
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 15.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 16.0.0
+```
+
+### To 15.0
+
+Version 15.0.0 changes the relabeling config, aligning it with the [Prometheus community conventions](https://github.com/prometheus/prometheus/pull/9832). If you've made manual changes to the relabeling config, you have to adapt your changes.
+
+Before you update please execute the following command, to be able to update kube-state-metrics:
+
+```bash
+kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
+```
+
+### To 9.0
+
+Version 9.0 adds a new option to enable or disable the Prometheus Server. This supports the use case of running a Prometheus server in one k8s cluster and scraping exporters in another cluster while using the same chart for each deployment. To install the server `server.enabled` must be set to `true`.
+
+### To 5.0
+
+As of version 5.0, this chart uses Prometheus 2.x. This version of prometheus introduces a new data format and is not compatible with prometheus 1.x. It is recommended to install this as a new release, as updating existing releases will not work. See the [prometheus docs](https://prometheus.io/docs/prometheus/latest/migration/#storage) for instructions on retaining your old data.
+
+Prometheus version 2.x has made changes to alertmanager, storage and recording rules. Check out the migration guide [here](https://prometheus.io/docs/prometheus/2.0/migration/).
+
+Users of this chart will need to update their alerting rules to the new format before they can upgrade.
+
+### Example Migration
+
+Assuming you have an existing release of the prometheus chart, named `prometheus-old`. In order to update to prometheus 2.x while keeping your old data do the following:
+
+1. Update the `prometheus-old` release. Disable scraping on every component besides the prometheus server, similar to the configuration below:
+
+  ```yaml
+  alertmanager:
+    enabled: false
+  alertmanagerFiles:
+    alertmanager.yml: ""
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+  server:
+    extraArgs:
+      storage.local.retention: 720h
+  serverFiles:
+    alerts: ""
+    prometheus.yml: ""
+    rules: ""
+  ```
+
+1. Deploy a new release of the chart with version 5.0+ using prometheus 2.x. In the values.yaml set the scrape config as usual, and also add the `prometheus-old` instance as a remote-read target.
+
+   ```yaml
+    prometheus.yml:
+      ...
+      remote_read:
+      - url: http://prometheus-old/api/v1/read
+      ...
+   ```
+
+   Old data will be available when you query the new prometheus instance.
+
+## Configuration
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+
+```console
+helm show values prometheus-community/prometheus
+```
+
+You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
+
+### Scraping Pod Metrics via Annotations
+
+This chart uses a default configuration that causes prometheus to scrape a variety of kubernetes resource types, provided they have the correct annotations. In this section we describe how to configure pods to be scraped; for information on how other resource types can be scraped you can do a `helm template` to get the kubernetes resource definitions, and then reference the prometheus configuration in the ConfigMap against the prometheus documentation for [relabel_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and [kubernetes_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config).
+
+In order to get prometheus to scrape pods, you must add annotations to the pods as below:
+
+```yaml
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8080"
+```
+
+You should adjust `prometheus.io/path` based on the URL that your pod serves metrics from. `prometheus.io/port` should be set to the port that your pod serves metrics from. Note that the values for `prometheus.io/scrape` and `prometheus.io/port` must be enclosed in double quotes.
+
+### Sharing Alerts Between Services
+
+Note that when [installing](#install-chart) or [upgrading](#upgrading-chart) you may use multiple values override files. This is particularly useful when you have alerts belonging to multiple services in the cluster. For example,
+
+```yaml
+# values.yaml
+# ...
+
+# service1-alert.yaml
+serverFiles:
+  alerts:
+    service1:
+      - alert: anAlert
+      # ...
+
+# service2-alert.yaml
+serverFiles:
+  alerts:
+    service2:
+      - alert: anAlert
+      # ...
+```
+
+```console
+helm install [RELEASE_NAME] prometheus-community/prometheus -f values.yaml -f service1-alert.yaml -f service2-alert.yaml
+```
+
+### RBAC Configuration
+
+Roles and RoleBindings resources will be created automatically for `server` service.
+
+To manually setup RBAC you need to set the parameter `rbac.create=false` and specify the service account to be used for each service by setting the parameters: `serviceAccounts.{{ component }}.create` to `false` and `serviceAccounts.{{ component }}.name` to the name of a pre-existing service account.
+
+> **Tip**: You can refer to the default `*-clusterrole.yaml` and `*-clusterrolebinding.yaml` files in [templates](templates/) to customize your own.
+
+### ConfigMap Files
+
+AlertManager is configured through [alertmanager.yml](https://prometheus.io/docs/alerting/configuration/). This file (and any others listed in `alertmanagerFiles`) will be mounted into the `alertmanager` pod.
+
+Prometheus is configured through [prometheus.yml](https://prometheus.io/docs/operating/configuration/). This file (and any others listed in `serverFiles`) will be mounted into the `server` pod.
+
+### Ingress TLS
+
+If your cluster allows automatic creation/retrieval of TLS certificates (e.g. [cert-manager](https://github.com/jetstack/cert-manager)), please refer to the documentation for that mechanism.
+
+To manually configure TLS, first create/retrieve a key & certificate pair for the address(es) you wish to protect. Then create a TLS secret in the namespace:
+
+```console
+kubectl create secret tls prometheus-server-tls --cert=path/to/tls.cert --key=path/to/tls.key
+```
+
+Include the secret's name, along with the desired hostnames, in the alertmanager/server Ingress TLS section of your custom `values.yaml` file:
+
+```yaml
+server:
+  ingress:
+    ## If true, Prometheus server Ingress will be created
+    ##
+    enabled: true
+
+    ## Prometheus server Ingress hostnames
+    ## Must be provided if Ingress is enabled
+    ##
+    hosts:
+      - prometheus.domain.com
+
+    ## Prometheus server Ingress TLS configuration
+    ## Secrets must be manually created in the namespace
+    ##
+    tls:
+      - secretName: prometheus-server-tls
+        hosts:
+          - prometheus.domain.com
+```
+
+### NetworkPolicy
+
+Enabling Network Policy for Prometheus will secure connections to Alert Manager and Kube State Metrics by only accepting connections from Prometheus Server. All inbound connections to Prometheus Server are still allowed.
+
+To enable network policy for Prometheus, install a networking plugin that implements the Kubernetes NetworkPolicy spec, and set `networkPolicy.enabled` to true.
+
+If NetworkPolicy is enabled for Prometheus' scrape targets, you may also need to manually create a networkpolicy which allows it.

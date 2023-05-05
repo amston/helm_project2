@@ -2,16 +2,80 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "zookeeper.name" -}}
+{{- define "prometheus.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "prometheus.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create labels for prometheus
+*/}}
+{{- define "prometheus.common.matchLabels" -}}
+app.kubernetes.io/name: {{ include "prometheus.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Create unified labels for prometheus components
+*/}}
+{{- define "prometheus.common.metaLabels" -}}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+helm.sh/chart: {{ include "prometheus.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ include "prometheus.name" . }}
+{{- end -}}
+
+{{- define "prometheus.alertmanager.labels" -}}
+{{ include "prometheus.alertmanager.matchLabels" . }}
+{{ include "prometheus.common.metaLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.alertmanager.matchLabels" -}}
+app.kubernetes.io/component: {{ .Values.alertmanager.name }}
+{{ include "prometheus.common.matchLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.nodeExporter.labels" -}}
+{{ include "prometheus.nodeExporter.matchLabels" . }}
+{{ include "prometheus.common.metaLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.nodeExporter.matchLabels" -}}
+app.kubernetes.io/component: {{ .Values.nodeExporter.name }}
+{{ include "prometheus.common.matchLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.pushgateway.labels" -}}
+{{ include "prometheus.pushgateway.matchLabels" . }}
+{{ include "prometheus.common.metaLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.pushgateway.matchLabels" -}}
+app.kubernetes.io/component: {{ .Values.pushgateway.name }}
+{{ include "prometheus.common.matchLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.server.labels" -}}
+{{ include "prometheus.server.matchLabels" . }}
+{{ include "prometheus.common.metaLabels" . }}
+{{- end -}}
+
+{{- define "prometheus.server.matchLabels" -}}
+app.kubernetes.io/component: {{ .Values.server.name }}
+{{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
 */}}
-{{- define "zookeeper.fullname" -}}
+{{- define "prometheus.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -25,204 +89,200 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
-Create chart name and version as used by the chart label.
+Create a fully qualified alertmanager name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "zookeeper.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
 
-{{/*
-Return the proper Zookeeper image name
-*/}}
-{{- define "zookeeper.image" -}}
-{{- $registryName := .Values.image.registry -}}
-{{- $repositoryName := .Values.image.repository -}}
-{{- $tag := .Values.image.tag | toString -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
+{{- define "prometheus.alertmanager.fullname" -}}
+{{- if .Values.alertmanager.fullnameOverride -}}
+{{- .Values.alertmanager.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Return the proper image name (for the metrics image)
-*/}}
-{{- define "zookeeper.metrics.image" -}}
-{{- $registryName := .Values.metrics.image.registry -}}
-{{- $repositoryName := .Values.metrics.image.repository -}}
-{{- $tag := .Values.metrics.image.tag | toString -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- printf "%s-%s" .Release.Name .Values.alertmanager.name | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.alertmanager.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
-{{- end -}}
-
-{{/*
-Return the proper Docker Image Registry Secret Names
-*/}}
-{{- define "zookeeper.imagePullSecrets" -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
-Also, we can not use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-{{- if .Values.global.imagePullSecrets }}
-imagePullSecrets:
-{{- range .Values.global.imagePullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- else if or .Values.image.pullSecrets .Values.metrics.image.pullSecrets .Values.volumePermissions.image.pullSecrets }}
-imagePullSecrets:
-{{- range .Values.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.metrics.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.volumePermissions.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- end -}}
-{{- else if or .Values.image.pullSecrets .Values.metrics.image.pullSecrets .Values.volumePermissions.image.pullSecrets }}
-imagePullSecrets:
-{{- range .Values.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.metrics.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.volumePermissions.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Common labels
+Create a fully qualified node-exporter name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "zookeeper.labels" -}}
-app.kubernetes.io/name: {{ include "zookeeper.name" . }}
-helm.sh/chart: {{ include "zookeeper.chart" . }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end -}}
-
-{{/*
-Renders a value that contains template.
-Usage:
-{{ include "zookeeper.tplValue" ( dict "value" .Values.path.to.the.Value "context" $) }}
-*/}}
-{{- define "zookeeper.tplValue" -}}
-    {{- if typeIs "string" .value }}
-        {{- tpl .value .context }}
-    {{- else }}
-        {{- tpl (.value | toYaml) .context }}
-    {{- end }}
-{{- end -}}
-
-{{/*
-Labels to use on deploy.spec.selector.matchLabels and svc.spec.selector
-*/}}
-{{- define "zookeeper.matchLabels" -}}
-app.kubernetes.io/name: {{ include "zookeeper.name" . }}
-{{- end -}}
-
-{{/*
-Return ZooKeeper Client Password
-*/}}
-{{- define "zookeeper.clientPassword" -}}
-{{- if .Values.auth.clientPassword -}}
-    {{- .Values.auth.clientPassword -}}
+{{- define "prometheus.nodeExporter.fullname" -}}
+{{- if .Values.nodeExporter.fullnameOverride -}}
+{{- .Values.nodeExporter.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-    {{- randAlphaNum 10 -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- printf "%s-%s" .Release.Name .Values.nodeExporter.name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.nodeExporter.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return ZooKeeper Servers Passwords
+Create a fully qualified Prometheus server name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "zookeeper.serverPasswords" -}}
-{{- if .Values.auth.serverPasswords -}}
-    {{- .Values.auth.serverPasswords -}}
+{{- define "prometheus.server.fullname" -}}
+{{- if .Values.server.fullnameOverride -}}
+{{- .Values.server.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-    {{- randAlphaNum 10 -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- printf "%s-%s" .Release.Name .Values.server.name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.server.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return the proper image name (for the init container volume-permissions image)
+Create a fully qualified pushgateway name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "zookeeper.volumePermissions.image" -}}
-{{- $registryName := .Values.volumePermissions.image.registry -}}
-{{- $repositoryName := .Values.volumePermissions.image.repository -}}
-{{- $tag := .Values.volumePermissions.image.tag | toString -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
+{{- define "prometheus.pushgateway.fullname" -}}
+{{- if .Values.pushgateway.fullnameOverride -}}
+{{- .Values.pushgateway.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- printf "%s-%s" .Release.Name .Values.pushgateway.name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.pushgateway.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return the proper Storage Class
+Get KubeVersion removing pre-release information.
 */}}
-{{- define "zookeeper.storageClass" -}}
+{{- define "prometheus.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version (regexFind "v[0-9]+\\.[0-9]+\\.[0-9]+" .Capabilities.KubeVersion.Version) -}}
+{{- end -}}
+
 {{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
+Return the appropriate apiVersion for deployment.
 */}}
-{{- if .Values.global -}}
-    {{- if .Values.global.storageClass -}}
-        {{- if (eq "-" .Values.global.storageClass) -}}
-            {{- printf "storageClassName: \"\"" -}}
-        {{- else }}
-            {{- printf "storageClassName: %s" .Values.global.storageClass -}}
-        {{- end -}}
-    {{- else -}}
-        {{- if .Values.persistence.storageClass -}}
-              {{- if (eq "-" .Values.persistence.storageClass) -}}
-                  {{- printf "storageClassName: \"\"" -}}
-              {{- else }}
-                  {{- printf "storageClassName: %s" .Values.persistence.storageClass -}}
-              {{- end -}}
-        {{- end -}}
-    {{- end -}}
+{{- define "prometheus.deployment.apiVersion" -}}
+{{- print "apps/v1" -}}
+{{- end -}}
+{{/*
+Return the appropriate apiVersion for daemonset.
+*/}}
+{{- define "prometheus.daemonset.apiVersion" -}}
+{{- print "apps/v1" -}}
+{{- end -}}
+{{/*
+Return the appropriate apiVersion for networkpolicy.
+*/}}
+{{- define "prometheus.networkPolicy.apiVersion" -}}
+{{- print "networking.k8s.io/v1" -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for poddisruptionbudget.
+*/}}
+{{- define "prometheus.podDisruptionBudget.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1" }}
+{{- print "policy/v1" -}}
 {{- else -}}
-    {{- if .Values.persistence.storageClass -}}
-        {{- if (eq "-" .Values.persistence.storageClass) -}}
-            {{- printf "storageClassName: \"\"" -}}
-        {{- else }}
-            {{- printf "storageClassName: %s" .Values.persistence.storageClass -}}
-        {{- end -}}
-    {{- end -}}
+{{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+{{/*
+Return the appropriate apiVersion for rbac.
+*/}}
+{{- define "rbac.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
+{{- print "rbac.authorization.k8s.io/v1" -}}
+{{- else -}}
+{{- print "rbac.authorization.k8s.io/v1beta1" -}}
+{{- end -}}
+{{- end -}}
+{{/*
+Return the appropriate apiVersion for ingress.
+*/}}
+{{- define "ingress.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" (include "prometheus.kubeVersion" .)) -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
+    {{- print "networking.k8s.io/v1beta1" -}}
+  {{- else -}}
+    {{- print "extensions/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Return if ingress is stable.
+*/}}
+{{- define "ingress.isStable" -}}
+  {{- eq (include "ingress.apiVersion" .) "networking.k8s.io/v1" -}}
+{{- end -}}
+
+{{/*
+Return if ingress supports ingressClassName.
+*/}}
+{{- define "ingress.supportsIngressClassName" -}}
+  {{- or (eq (include "ingress.isStable" .) "true") (and (eq (include "ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "prometheus.kubeVersion" .))) -}}
+{{- end -}}
+{{/*
+Return if ingress supports pathType.
+*/}}
+{{- define "ingress.supportsPathType" -}}
+  {{- or (eq (include "ingress.isStable" .) "true") (and (eq (include "ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "prometheus.kubeVersion" .))) -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use for the alertmanager component
+*/}}
+{{- define "prometheus.serviceAccountName.alertmanager" -}}
+{{- if .Values.serviceAccounts.alertmanager.create -}}
+    {{ default (include "prometheus.alertmanager.fullname" .) .Values.serviceAccounts.alertmanager.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccounts.alertmanager.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use for the nodeExporter component
+*/}}
+{{- define "prometheus.serviceAccountName.nodeExporter" -}}
+{{- if .Values.serviceAccounts.nodeExporter.create -}}
+    {{ default (include "prometheus.nodeExporter.fullname" .) .Values.serviceAccounts.nodeExporter.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccounts.nodeExporter.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use for the pushgateway component
+*/}}
+{{- define "prometheus.serviceAccountName.pushgateway" -}}
+{{- if .Values.serviceAccounts.pushgateway.create -}}
+    {{ default (include "prometheus.pushgateway.fullname" .) .Values.serviceAccounts.pushgateway.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccounts.pushgateway.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use for the server component
+*/}}
+{{- define "prometheus.serviceAccountName.server" -}}
+{{- if .Values.serviceAccounts.server.create -}}
+    {{ default (include "prometheus.server.fullname" .) .Values.serviceAccounts.server.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccounts.server.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Define the prometheus.namespace template if set with forceNamespace or .Release.Namespace is set
+*/}}
+{{- define "prometheus.namespace" -}}
+  {{- default .Release.Namespace .Values.forceNamespace -}}
+{{- end }}

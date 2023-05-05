@@ -1,12 +1,35 @@
-apiVersion: v1
-appVersion: 8.5.1
-description: Official Elastic helm chart for Elasticsearch
-home: https://github.com/elastic/helm-charts
-icon: https://helm.elastic.co/icons/elasticsearch.png
+annotations:
+  truecharts.org/SCALE-support: "true"
+  truecharts.org/catagories: |
+    - productivity
+  truecharts.org/grade: U
+apiVersion: v2
+appVersion: 5.45.1
+dependencies:
+- name: common
+  repository: https://library-charts.truecharts.org
+  version: 11.1.2
+- condition: mariadb.enabled
+  name: mariadb
+  repository: https://deps.truecharts.org/
+  version: 5.0.35
+description: Ghost is an open source, professional publishing platform built on a
+  modern Node.js technology stack designed for teams who need power, flexibility and
+  performance.
+home: https://truecharts.org/charts/incubator/ghost
+icon: https://truecharts.org/img/hotlink-ok/chart-icons/ghost.png
+keywords:
+- ghost
+- blog
+- cms
+kubeVersion: '>=1.16.0-0'
 maintainers:
-- email: helm-charts@elastic.co
-  name: Elastic
-name: elasticsearch
+- email: info@truecharts.org
+  name: TrueCharts
+  url: https://truecharts.org
+name: ghost
 sources:
-- https://github.com/elastic/elasticsearch
-version: 8.5.1
+- https://github.com/truecharts/charts/tree/master/charts/incubator/ghost
+- https://github.com/TryGhost/Ghost
+- https://ghost.org/docs/
+version: 6.0.59

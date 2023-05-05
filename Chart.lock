@@ -1,9 +1,6 @@
 dependencies:
 - name: common
-  repository: https://library-charts.truecharts.org
-  version: 11.1.2
-- name: mariadb
-  repository: https://deps.truecharts.org/
-  version: 5.0.35
-digest: sha256:ce8fe8df642484ec4e38464d030bc55ee60606e0437b8a854fcde9e75645d0b7
-generated: "2023-05-03T11:35:46.111225099Z"
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 2.2.4
+digest: sha256:829fc25cbbb396161e735c83d152d74a8b3a82d07f08866b885b812d30b920df
+generated: "2023-04-20T09:30:24.690468+02:00"

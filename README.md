@@ -1,51 +1,27 @@
-<!--- app-name: SuiteCRM -->
+# Grafana Helm Chart
 
-# SuiteCRM packaged by Bitnami
+* Installs the web dashboarding system [Grafana](http://grafana.org/)
 
-SuiteCRM is a completely open source, enterprise-grade Customer Relationship Management (CRM) application. SuiteCRM is a fork of the popular SugarCRM application.
-
-[Overview of SuiteCRM](http://www.suitecrm.com/)
-
-Trademarks: This software listing is packaged by Bitnami. The respective trademarks mentioned in the offering are owned by the respective companies, and use of them does not imply any affiliation or endorsement.
-
-## TL;DR
+## Get Repo Info
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/suitecrm
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 ```
 
-## Introduction
-
-This chart bootstraps a [SuiteCRM](https://github.com/bitnami/containers/tree/main/bitnami/suitecrm) deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
-
-SuiteCRM is a software fork of the popular customer relationship management (CRM) system SugarCRM.
-
-It also packages the [Bitnami MariaDB chart](https://github.com/bitnami/charts/tree/main/bitnami/mariadb) which is required for bootstrapping a MariaDB deployment for the database requirements of the SuiteCRM application.
-
-Bitnami charts can be used with [Kubeapps](https://kubeapps.dev/) for deployment and management of Helm Charts in clusters.
-
-## Prerequisites
-
-- Kubernetes 1.19+
-- Helm 3.2.0+
-- PV provisioner support in the underlying infrastructure
-- ReadWriteMany volumes for deployment scaling
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```console
-helm install my-release oci://registry-1.docker.io/bitnamicharts/suitecrm
+helm install my-release grafana/grafana
 ```
-
-The command deploys SuiteCRM on the Kubernetes cluster in the default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
-
-> **Tip**: List all releases using `helm list`
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the my-release deployment:
 
 ```console
 helm delete my-release
@@ -53,512 +29,656 @@ helm delete my-release
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Parameters
+## Upgrading an existing Release to a new major version
 
-### Global parameters
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an
+incompatible breaking change needing manual actions.
 
-| Name                      | Description                                     | Value |
-| ------------------------- | ----------------------------------------------- | ----- |
-| `global.imageRegistry`    | Global Docker image registry                    | `""`  |
-| `global.imagePullSecrets` | Global Docker registry secret names as an array | `[]`  |
-| `global.storageClass`     | Global StorageClass for Persistent Volume(s)    | `""`  |
+### To 4.0.0 (And 3.12.1)
 
-### Common parameters
+This version requires Helm >= 2.12.0.
 
-| Name                | Description                                                                                                  | Value |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
-| `kubeVersion`       | Force target Kubernetes version (using Helm capabilities if not set)                                         | `""`  |
-| `nameOverride`      | String to partially override suitecrm.fullname template (will maintain the release name)                     | `""`  |
-| `fullnameOverride`  | String to fully override suitecrm.fullname template                                                          | `""`  |
-| `extraDeploy`       | Array with extra yaml to deploy with the chart. Evaluated as a template                                      | `[]`  |
-| `commonAnnotations` | Common annotations to add to all SuiteCRM resources (sub-charts are not considered). Evaluated as a template | `{}`  |
-| `commonLabels`      | Common labels to add to all SuiteCRM resources (sub-charts are not considered). Evaluated as a template      | `{}`  |
+### To 5.0.0
 
-### SuiteCRM parameters
+You have to add --force to your helm upgrade command as the labels of the chart have changed.
 
-| Name                                    | Description                                                                                              | Value                 |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------- |
-| `image.registry`                        | SuiteCRM image registry                                                                                  | `docker.io`           |
-| `image.repository`                      | SuiteCRM image repository                                                                                | `bitnami/suitecrm`    |
-| `image.tag`                             | SuiteCRM image tag (immutable tags are recommended)                                                      | `7.13.2-debian-11-r2` |
-| `image.digest`                          | SuiteCRM image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                  |
-| `image.pullPolicy`                      | SuiteCRM image pull policy                                                                               | `IfNotPresent`        |
-| `image.pullSecrets`                     | Specify docker-registry secret names as an array                                                         | `[]`                  |
-| `image.debug`                           | Specify if debug logs should be enabled                                                                  | `false`               |
-| `replicaCount`                          | Number of replicas (requires ReadWriteMany PVC support)                                                  | `1`                   |
-| `suitecrmSkipInstall`                   | Skip SuiteCRM installation wizard. Useful for migrations and restoring from SQL dump                     | `false`               |
-| `suitecrmValidateUserIP`                | Whether to validate the user IP address or not                                                           | `false`               |
-| `suitecrmHost`                          | SuiteCRM host to create application URLs                                                                 | `""`                  |
-| `suitecrmUsername`                      | User of the application                                                                                  | `user`                |
-| `suitecrmPassword`                      | Application password                                                                                     | `""`                  |
-| `suitecrmEmail`                         | Admin email                                                                                              | `user@example.com`    |
-| `allowEmptyPassword`                    | Allow DB blank passwords                                                                                 | `false`               |
-| `command`                               | Override default container command (useful when using custom images)                                     | `[]`                  |
-| `args`                                  | Override default container args (useful when using custom images)                                        | `[]`                  |
-| `hostAliases`                           | Deployment pod host aliases                                                                              | `[]`                  |
-| `updateStrategy.type`                   | Update strategy - only really applicable for deployments with RWO PVs attached                           | `RollingUpdate`       |
-| `extraEnvVars`                          | An array to add extra environment variables                                                              | `[]`                  |
-| `extraEnvVarsCM`                        | ConfigMap containing extra environment variables                                                         | `""`                  |
-| `extraEnvVarsSecret`                    | Secret containing extra environment variables                                                            | `""`                  |
-| `extraVolumes`                          | Extra volumes to add to the deployment. Requires setting `extraVolumeMounts`                             | `[]`                  |
-| `extraVolumeMounts`                     | Extra volume mounts to add to the container. Requires setting `extraVolumeMounts                         | `[]`                  |
-| `initContainers`                        | Extra init containers to add to the deployment                                                           | `[]`                  |
-| `sidecars`                              | Extra sidecar containers to add to the deployment                                                        | `[]`                  |
-| `tolerations`                           | Tolerations for pod assignment. Evaluated as a template.                                                 | `[]`                  |
-| `priorityClassName`                     | SuiteCRM pods' priorityClassName                                                                         | `""`                  |
-| `schedulerName`                         | Name of the k8s scheduler (other than default)                                                           | `""`                  |
-| `topologySpreadConstraints`             | Topology Spread Constraints for pod assignment                                                           | `[]`                  |
-| `existingSecret`                        | Name of a secret with the application password                                                           | `""`                  |
-| `suitecrmSmtpHost`                      | SMTP host                                                                                                | `""`                  |
-| `suitecrmSmtpPort`                      | SMTP port                                                                                                | `""`                  |
-| `suitecrmSmtpUser`                      | SMTP user                                                                                                | `""`                  |
-| `suitecrmSmtpPassword`                  | SMTP password                                                                                            | `""`                  |
-| `suitecrmSmtpProtocol`                  | SMTP protocol [`ssl`, `tls`]                                                                             | `""`                  |
-| `suitecrmNotifyAddress`                 | SuiteCRM notify address                                                                                  | `""`                  |
-| `suitecrmNotifyName`                    | SuiteCRM notify name                                                                                     | `""`                  |
-| `containerPorts`                        | Container ports                                                                                          | `{}`                  |
-| `sessionAffinity`                       | Control where client requests go, to the same pod or round-robin                                         | `None`                |
-| `podAffinityPreset`                     | Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                      | `""`                  |
-| `podAntiAffinityPreset`                 | Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                 | `soft`                |
-| `nodeAffinityPreset.type`               | Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                | `""`                  |
-| `nodeAffinityPreset.key`                | Node label key to match Ignored if `affinity` is set.                                                    | `""`                  |
-| `nodeAffinityPreset.values`             | Node label values to match. Ignored if `affinity` is set.                                                | `[]`                  |
-| `affinity`                              | Affinity for pod assignment                                                                              | `{}`                  |
-| `nodeSelector`                          | Node labels for pod assignment. Evaluated as a template.                                                 | `{}`                  |
-| `resources.requests`                    | The requested resources for the container                                                                | `{}`                  |
-| `podSecurityContext.enabled`            | Enable SuiteCRM pods' Security Context                                                                   | `true`                |
-| `podSecurityContext.fsGroup`            | SuiteCRM pods' group ID                                                                                  | `1001`                |
-| `containerSecurityContext.enabled`      | Enable SuiteCRM containers' Security Context                                                             | `true`                |
-| `containerSecurityContext.runAsUser`    | SuiteCRM containers' Security Context runAsUser                                                          | `1001`                |
-| `containerSecurityContext.runAsNonRoot` | SuiteCRM containers' Security Context runAsNonRoot                                                       | `true`                |
-| `livenessProbe.enabled`                 | Enable livenessProbe                                                                                     | `true`                |
-| `livenessProbe.path`                    | Request path for livenessProbe                                                                           | `/index.php`          |
-| `livenessProbe.initialDelaySeconds`     | Initial delay seconds for livenessProbe                                                                  | `600`                 |
-| `livenessProbe.periodSeconds`           | Period seconds for livenessProbe                                                                         | `10`                  |
-| `livenessProbe.timeoutSeconds`          | Timeout seconds for livenessProbe                                                                        | `5`                   |
-| `livenessProbe.failureThreshold`        | Failure threshold for livenessProbe                                                                      | `6`                   |
-| `livenessProbe.successThreshold`        | Success threshold for livenessProbe                                                                      | `1`                   |
-| `readinessProbe.enabled`                | Enable readinessProbe                                                                                    | `true`                |
-| `readinessProbe.path`                   | Request path for readinessProbe                                                                          | `/index.php`          |
-| `readinessProbe.initialDelaySeconds`    | Initial delay seconds for readinessProbe                                                                 | `30`                  |
-| `readinessProbe.periodSeconds`          | Period seconds for readinessProbe                                                                        | `5`                   |
-| `readinessProbe.timeoutSeconds`         | Timeout seconds for readinessProbe                                                                       | `3`                   |
-| `readinessProbe.failureThreshold`       | Failure threshold for readinessProbe                                                                     | `6`                   |
-| `readinessProbe.successThreshold`       | Success threshold for readinessProbe                                                                     | `1`                   |
-| `startupProbe.enabled`                  | Enable startupProbe                                                                                      | `false`               |
-| `startupProbe.path`                     | Request path for startupProbe                                                                            | `/index.php`          |
-| `startupProbe.initialDelaySeconds`      | Initial delay seconds for startupProbe                                                                   | `0`                   |
-| `startupProbe.periodSeconds`            | Period seconds for startupProbe                                                                          | `10`                  |
-| `startupProbe.timeoutSeconds`           | Timeout seconds for startupProbe                                                                         | `3`                   |
-| `startupProbe.failureThreshold`         | Failure threshold for startupProbe                                                                       | `60`                  |
-| `startupProbe.successThreshold`         | Success threshold for startupProbe                                                                       | `1`                   |
-| `customLivenessProbe`                   | Override default liveness probe                                                                          | `{}`                  |
-| `customReadinessProbe`                  | Override default readiness probe                                                                         | `{}`                  |
-| `customStartupProbe`                    | Override default startup probe                                                                           | `{}`                  |
-| `lifecycleHooks`                        | lifecycleHooks for the container to automate configuration before or after startup                       | `{}`                  |
-| `podAnnotations`                        | Pod annotations                                                                                          | `{}`                  |
-| `podLabels`                             | Pod extra labels                                                                                         | `{}`                  |
+### To 6.0.0
 
-### Database parameters
+This version requires Helm >= 3.1.0.
 
-| Name                                        | Description                                                                              | Value               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------- |
-| `mariadb.enabled`                           | Whether to deploy a mariadb server to satisfy the applications database requirements     | `true`              |
-| `mariadb.architecture`                      | MariaDB architecture. Allowed values: `standalone` or `replication`                      | `standalone`        |
-| `mariadb.auth.rootPassword`                 | Password for the MariaDB `root` user                                                     | `""`                |
-| `mariadb.auth.database`                     | Database name to create                                                                  | `bitnami_suitecrm`  |
-| `mariadb.auth.username`                     | Database user to create                                                                  | `bn_suitecrm`       |
-| `mariadb.auth.password`                     | Password for the database                                                                | `""`                |
-| `mariadb.primary.persistence.enabled`       | Enable database persistence using PVC                                                    | `true`              |
-| `mariadb.primary.persistence.storageClass`  | MariaDB data Persistent Volume Storage Class                                             | `""`                |
-| `mariadb.primary.persistence.accessModes`   | Database Persistent Volume Access Modes                                                  | `["ReadWriteOnce"]` |
-| `mariadb.primary.persistence.size`          | Database Persistent Volume Size                                                          | `8Gi`               |
-| `mariadb.primary.persistence.hostPath`      | Set path in case you want to use local host path volumes (not recommended in production) | `""`                |
-| `mariadb.primary.persistence.existingClaim` | Name of an existing `PersistentVolumeClaim` for MariaDB primary replicas                 | `""`                |
-| `externalDatabase.host`                     | Host of the existing database                                                            | `""`                |
-| `externalDatabase.port`                     | Port of the existing database                                                            | `3306`              |
-| `externalDatabase.user`                     | Existing username in the external database                                               | `bn_suitecrm`       |
-| `externalDatabase.password`                 | Password for the above username                                                          | `""`                |
-| `externalDatabase.database`                 | Name of the existing database                                                            | `bitnami_suitecrm`  |
-| `externalDatabase.existingSecret`           | Name of an existing secret resource containing the DB password                           | `""`                |
+## Configuration
 
-### Persistence parameters
+| Parameter                                 | Description                                   | Default                                                 |
+|-------------------------------------------|-----------------------------------------------|---------------------------------------------------------|
+| `replicas`                                | Number of nodes                               | `1`                                                     |
+| `podDisruptionBudget.minAvailable`        | Pod disruption minimum available              | `nil`                                                   |
+| `podDisruptionBudget.maxUnavailable`      | Pod disruption maximum unavailable            | `nil`                                                   |
+| `deploymentStrategy`                      | Deployment strategy                           | `{ "type": "RollingUpdate" }`                           |
+| `livenessProbe`                           | Liveness Probe settings                       | `{ "httpGet": { "path": "/api/health", "port": 3000 } "initialDelaySeconds": 60, "timeoutSeconds": 30, "failureThreshold": 10 }` |
+| `readinessProbe`                          | Readiness Probe settings                      | `{ "httpGet": { "path": "/api/health", "port": 3000 } }`|
+| `securityContext`                         | Deployment securityContext                    | `{"runAsUser": 472, "runAsGroup": 472, "fsGroup": 472}`  |
+| `priorityClassName`                       | Name of Priority Class to assign pods         | `nil`                                                   |
+| `image.repository`                        | Image repository                              | `grafana/grafana`                                       |
+| `image.tag`                               | Overrides the Grafana image tag whose default is the chart appVersion (`Must be >= 5.0.0`) | ``                                                      |
+| `image.sha`                               | Image sha (optional)                          | ``                                                      |
+| `image.pullPolicy`                        | Image pull policy                             | `IfNotPresent`                                          |
+| `image.pullSecrets`                       | Image pull secrets (can be templated)         | `[]`                                                    |
+| `service.enabled`                         | Enable grafana service                        | `true`                                                  |
+| `service.type`                            | Kubernetes service type                       | `ClusterIP`                                             |
+| `service.port`                            | Kubernetes port where service is exposed      | `80`                                                    |
+| `service.portName`                        | Name of the port on the service               | `service`                                               |
+| `service.appProtocol`                     | Adds the appProtocol field to the service     | ``                                                      |
+| `service.targetPort`                      | Internal service is port                      | `3000`                                                  |
+| `service.nodePort`                        | Kubernetes service nodePort                   | `nil`                                                   |
+| `service.annotations`                     | Service annotations (can be templated)        | `{}`                                                    |
+| `service.labels`                          | Custom labels                                 | `{}`                                                    |
+| `service.clusterIP`                       | internal cluster service IP                   | `nil`                                                   |
+| `service.loadBalancerIP`                  | IP address to assign to load balancer (if supported) | `nil`                                            |
+| `service.loadBalancerSourceRanges`        | list of IP CIDRs allowed access to lb (if supported) | `[]`                                             |
+| `service.externalIPs`                     | service external IP addresses                 | `[]`                                                    |
+| `headlessService`                         | Create a headless service                     | `false`                                                 |
+| `extraExposePorts`                        | Additional service ports for sidecar containers| `[]`                                                   |
+| `hostAliases`                             | adds rules to the pod's /etc/hosts            | `[]`                                                    |
+| `ingress.enabled`                         | Enables Ingress                               | `false`                                                 |
+| `ingress.annotations`                     | Ingress annotations (values are templated)    | `{}`                                                    |
+| `ingress.labels`                          | Custom labels                                 | `{}`                                                    |
+| `ingress.path`                            | Ingress accepted path                         | `/`                                                     |
+| `ingress.pathType`                        | Ingress type of path                          | `Prefix`                                                |
+| `ingress.hosts`                           | Ingress accepted hostnames                    | `["chart-example.local"]`                                                    |
+| `ingress.extraPaths`                      | Ingress extra paths to prepend to every host configuration. Useful when configuring [custom actions with AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/ingress/annotation/#actions). Requires `ingress.hosts` to have one or more host entries. | `[]`                                                    |
+| `ingress.tls`                             | Ingress TLS configuration                     | `[]`                                                    |
+| `ingress.ingressClassName`                | Ingress Class Name. MAY be required for Kubernetes versions >= 1.18 | `""`                              |
+| `resources`                               | CPU/Memory resource requests/limits           | `{}`                                                    |
+| `nodeSelector`                            | Node labels for pod assignment                | `{}`                                                    |
+| `tolerations`                             | Toleration labels for pod assignment          | `[]`                                                    |
+| `affinity`                                | Affinity settings for pod assignment          | `{}`                                                    |
+| `extraInitContainers`                     | Init containers to add to the grafana pod     | `{}`                                                    |
+| `extraContainers`                         | Sidecar containers to add to the grafana pod  | `""`                                                    |
+| `extraContainerVolumes`                   | Volumes that can be mounted in sidecar containers | `[]`                                                |
+| `extraLabels`                             | Custom labels for all manifests               | `{}`                                                    |
+| `schedulerName`                           | Name of the k8s scheduler (other than default) | `nil`                                                  |
+| `persistence.enabled`                     | Use persistent volume to store data           | `false`                                                 |
+| `persistence.type`                        | Type of persistence (`pvc` or `statefulset`)  | `pvc`                                                   |
+| `persistence.size`                        | Size of persistent volume claim               | `10Gi`                                                  |
+| `persistence.existingClaim`               | Use an existing PVC to persist data (can be templated) | `nil`                                          |
+| `persistence.storageClassName`            | Type of persistent volume claim               | `nil`                                                   |
+| `persistence.accessModes`                 | Persistence access modes                      | `[ReadWriteOnce]`                                       |
+| `persistence.annotations`                 | PersistentVolumeClaim annotations             | `{}`                                                    |
+| `persistence.finalizers`                  | PersistentVolumeClaim finalizers              | `[ "kubernetes.io/pvc-protection" ]`                    |
+| `persistence.extraPvcLabels`              | Extra labels to apply to a PVC.               | `{}`                                                    |
+| `persistence.subPath`                     | Mount a sub dir of the persistent volume (can be templated) | `nil`                                     |
+| `persistence.inMemory.enabled`            | If persistence is not enabled, whether to mount the local storage in-memory to improve performance | `false`                                                   |
+| `persistence.inMemory.sizeLimit`          | SizeLimit for the in-memory local storage     | `nil`                                                   |
+| `initChownData.enabled`                   | If false, don't reset data ownership at startup | true                                                  |
+| `initChownData.image.repository`          | init-chown-data container image repository    | `busybox`                                               |
+| `initChownData.image.tag`                 | init-chown-data container image tag           | `1.31.1`                                                |
+| `initChownData.image.sha`                 | init-chown-data container image sha (optional)| `""`                                                    |
+| `initChownData.image.pullPolicy`          | init-chown-data container image pull policy   | `IfNotPresent`                                          |
+| `initChownData.resources`                 | init-chown-data pod resource requests & limits | `{}`                                                   |
+| `schedulerName`                           | Alternate scheduler name                      | `nil`                                                   |
+| `env`                                     | Extra environment variables passed to pods    | `{}`                                                    |
+| `envValueFrom`                            | Environment variables from alternate sources. See the API docs on [EnvVarSource](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#envvarsource-v1-core) for format details. Can be templated | `{}` |
+| `envFromSecret`                           | Name of a Kubernetes secret (must be manually created in the same namespace) containing values to be added to the environment. Can be templated | `""` |
+| `envFromSecrets`                          | List of Kubernetes secrets (must be manually created in the same namespace) containing values to be added to the environment. Can be templated | `[]` |
+| `envFromConfigMaps`                       | List of Kubernetes ConfigMaps (must be manually created in the same namespace) containing values to be added to the environment. Can be templated | `[]` |
+| `envRenderSecret`                         | Sensible environment variables passed to pods and stored as secret | `{}`                               |
+| `enableServiceLinks`                      | Inject Kubernetes services as environment variables. | `true`                                           |
+| `extraSecretMounts`                       | Additional grafana server secret mounts       | `[]`                                                    |
+| `extraVolumeMounts`                       | Additional grafana server volume mounts       | `[]`                                                    |
+| `createConfigmap`                         | Enable creating the grafana configmap         | `true`                                                  |
+| `extraConfigmapMounts`                    | Additional grafana server configMap volume mounts (values are templated) | `[]`                         |
+| `extraEmptyDirMounts`                     | Additional grafana server emptyDir volume mounts | `[]`                                                 |
+| `plugins`                                 | Plugins to be loaded along with Grafana       | `[]`                                                    |
+| `datasources`                             | Configure grafana datasources (passed through tpl) | `{}`                                               |
+| `alerting`                                | Configure grafana alerting (passed through tpl) | `{}`                                                  |
+| `notifiers`                               | Configure grafana notifiers                   | `{}`                                                    |
+| `dashboardProviders`                      | Configure grafana dashboard providers         | `{}`                                                    |
+| `dashboards`                              | Dashboards to import                          | `{}`                                                    |
+| `dashboardsConfigMaps`                    | ConfigMaps reference that contains dashboards | `{}`                                                    |
+| `grafana.ini`                             | Grafana's primary configuration               | `{}`                                                    |
+| `global.imagePullSecrets`                 | Global image pull secrets (can be templated). Allows either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).  | `[]`                                                    |
+| `ldap.enabled`                            | Enable LDAP authentication                    | `false`                                                 |
+| `ldap.existingSecret`                     | The name of an existing secret containing the `ldap.toml` file, this must have the key `ldap-toml`. | `""` |
+| `ldap.config`                             | Grafana's LDAP configuration                  | `""`                                                    |
+| `annotations`                             | Deployment annotations                        | `{}`                                                    |
+| `labels`                                  | Deployment labels                             | `{}`                                                    |
+| `podAnnotations`                          | Pod annotations                               | `{}`                                                    |
+| `podLabels`                               | Pod labels                                    | `{}`                                                    |
+| `podPortName`                             | Name of the grafana port on the pod           | `grafana`                                               |
+| `lifecycleHooks`                          | Lifecycle hooks for podStart and preStop [Example](https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/#define-poststart-and-prestop-handlers)     | `{}`                                                    |
+| `sidecar.image.repository`                | Sidecar image repository                      | `quay.io/kiwigrid/k8s-sidecar`                          |
+| `sidecar.image.tag`                       | Sidecar image tag                             | `1.22.0`                                                |
+| `sidecar.image.sha`                       | Sidecar image sha (optional)                  | `""`                                                    |
+| `sidecar.imagePullPolicy`                 | Sidecar image pull policy                     | `IfNotPresent`                                          |
+| `sidecar.resources`                       | Sidecar resources                             | `{}`                                                    |
+| `sidecar.securityContext`                 | Sidecar securityContext                       | `{}`                                                    |
+| `sidecar.enableUniqueFilenames`           | Sets the kiwigrid/k8s-sidecar UNIQUE_FILENAMES environment variable. If set to `true` the sidecar will create unique filenames where duplicate data keys exist between ConfigMaps and/or Secrets within the same or multiple Namespaces. | `false`                           |
+| `sidecar.alerts.enabled`             | Enables the cluster wide search for alerts and adds/updates/deletes them in grafana |`false`       |
+| `sidecar.alerts.label`               | Label that config maps with alerts should have to be added | `grafana_alert`                               |
+| `sidecar.alerts.labelValue`          | Label value that config maps with alerts should have to be added | `""`                                |
+| `sidecar.alerts.searchNamespace`     | Namespaces list. If specified, the sidecar will search for alerts config-maps  inside these namespaces. Otherwise the namespace in which the sidecar is running will be used. It's also possible to specify ALL to search in all namespaces. | `nil`                               |
+| `sidecar.alerts.watchMethod`         | Method to use to detect ConfigMap changes. With WATCH the sidecar will do a WATCH requests, with SLEEP it will list all ConfigMaps, then sleep for 60 seconds. | `WATCH` |
+| `sidecar.alerts.resource`            | Should the sidecar looks into secrets, configmaps or both. | `both`                               |
+| `sidecar.alerts.reloadURL`           | Full url of datasource configuration reload API endpoint, to invoke after a config-map change | `"http://localhost:3000/api/admin/provisioning/alerting/reload"` |
+| `sidecar.alerts.skipReload`          | Enabling this omits defining the REQ_URL and REQ_METHOD environment variables | `false` |
+| `sidecar.alerts.initDatasources`     | Set to true to deploy the datasource sidecar as an initContainer in addition to a container. This is needed if skipReload is true, to load any alerts defined at startup time. | `false` |
+| `sidecar.dashboards.enabled`              | Enables the cluster wide search for dashboards and adds/updates/deletes them in grafana | `false`       |
+| `sidecar.dashboards.SCProvider`           | Enables creation of sidecar provider          | `true`                                                  |
+| `sidecar.dashboards.provider.name`        | Unique name of the grafana provider           | `sidecarProvider`                                       |
+| `sidecar.dashboards.provider.orgid`       | Id of the organisation, to which the dashboards should be added | `1`                                   |
+| `sidecar.dashboards.provider.folder`      | Logical folder in which grafana groups dashboards | `""`                                                |
+| `sidecar.dashboards.provider.disableDelete` | Activate to avoid the deletion of imported dashboards | `false`                                       |
+| `sidecar.dashboards.provider.allowUiUpdates` | Allow updating provisioned dashboards from the UI | `false`                                          |
+| `sidecar.dashboards.provider.type`        | Provider type                                 | `file`                                                  |
+| `sidecar.dashboards.provider.foldersFromFilesStructure`        | Allow Grafana to replicate dashboard structure from filesystem.                                 | `false`                                                  |
+| `sidecar.dashboards.watchMethod`          | Method to use to detect ConfigMap changes. With WATCH the sidecar will do a WATCH requests, with SLEEP it will list all ConfigMaps, then sleep for 60 seconds. | `WATCH` |
+| `sidecar.skipTlsVerify`                   | Set to true to skip tls verification for kube api calls | `nil`                                         |
+| `sidecar.dashboards.label`                | Label that config maps with dashboards should have to be added | `grafana_dashboard`                                |
+| `sidecar.dashboards.labelValue`                | Label value that config maps with dashboards should have to be added | `""`                                |
+| `sidecar.dashboards.folder`               | Folder in the pod that should hold the collected dashboards (unless `sidecar.dashboards.defaultFolderName` is set). This path will be mounted. | `/tmp/dashboards`    |
+| `sidecar.dashboards.folderAnnotation`     | The annotation the sidecar will look for in configmaps to override the destination folder for files | `nil`                                                  |
+| `sidecar.dashboards.defaultFolderName`    | The default folder name, it will create a subfolder under the `sidecar.dashboards.folder` and put dashboards in there instead | `nil`                                |
+| `sidecar.dashboards.searchNamespace`      | Namespaces list. If specified, the sidecar will search for dashboards config-maps  inside these namespaces. Otherwise the namespace in which the sidecar is running will be used. It's also possible to specify ALL to search in all namespaces. | `nil`                                |
+| `sidecar.dashboards.script`               | Absolute path to shell script to execute after a configmap got reloaded. | `nil`                                |
+| `sidecar.dashboards.reloadURL`            | Full url of dashboards configuration reload API endpoint, to invoke after a config-map change | `"http://localhost:3000/api/admin/provisioning/dashboards/reload"` |
+| `sidecar.dashboards.skipReload`           | Enabling this omits defining the REQ_URL and REQ_METHOD environment variables | `false` |
+| `sidecar.dashboards.resource`             | Should the sidecar looks into secrets, configmaps or both. | `both`                               |
+| `sidecar.dashboards.extraMounts`          | Additional dashboard sidecar volume mounts. | `[]`                               |
+| `sidecar.datasources.enabled`             | Enables the cluster wide search for datasources and adds/updates/deletes them in grafana |`false`       |
+| `sidecar.datasources.label`               | Label that config maps with datasources should have to be added | `grafana_datasource`                               |
+| `sidecar.datasources.labelValue`          | Label value that config maps with datasources should have to be added | `""`                                |
+| `sidecar.datasources.searchNamespace`     | Namespaces list. If specified, the sidecar will search for datasources config-maps  inside these namespaces. Otherwise the namespace in which the sidecar is running will be used. It's also possible to specify ALL to search in all namespaces. | `nil`                               |
+| `sidecar.datasources.watchMethod`         | Method to use to detect ConfigMap changes. With WATCH the sidecar will do a WATCH requests, with SLEEP it will list all ConfigMaps, then sleep for 60 seconds. | `WATCH` |
+| `sidecar.datasources.resource`            | Should the sidecar looks into secrets, configmaps or both. | `both`                               |
+| `sidecar.datasources.reloadURL`           | Full url of datasource configuration reload API endpoint, to invoke after a config-map change | `"http://localhost:3000/api/admin/provisioning/datasources/reload"` |
+| `sidecar.datasources.skipReload`          | Enabling this omits defining the REQ_URL and REQ_METHOD environment variables | `false` |
+| `sidecar.datasources.initDatasources`     | Set to true to deploy the datasource sidecar as an initContainer in addition to a container. This is needed if skipReload is true, to load any datasources defined at startup time. | `false` |
+| `sidecar.notifiers.enabled`               | Enables the cluster wide search for notifiers and adds/updates/deletes them in grafana | `false`        |
+| `sidecar.notifiers.label`                 | Label that config maps with notifiers should have to be added | `grafana_notifier`                               |
+| `sidecar.notifiers.labelValue`            | Label value that config maps with notifiers should have to be added | `""`                                |
+| `sidecar.notifiers.searchNamespace`       | Namespaces list. If specified, the sidecar will search for notifiers config-maps (or secrets) inside these namespaces. Otherwise the namespace in which the sidecar is running will be used. It's also possible to specify ALL to search in all namespaces. | `nil`                               |
+| `sidecar.notifiers.watchMethod`           | Method to use to detect ConfigMap changes. With WATCH the sidecar will do a WATCH requests, with SLEEP it will list all ConfigMaps, then sleep for 60 seconds. | `WATCH` |
+| `sidecar.notifiers.resource`              | Should the sidecar looks into secrets, configmaps or both. | `both`                               |
+| `sidecar.notifiers.reloadURL`             | Full url of notifier configuration reload API endpoint, to invoke after a config-map change | `"http://localhost:3000/api/admin/provisioning/notifications/reload"` |
+| `sidecar.notifiers.skipReload`            | Enabling this omits defining the REQ_URL and REQ_METHOD environment variables | `false` |
+| `sidecar.notifiers.initNotifiers`         | Set to true to deploy the notifier sidecar as an initContainer in addition to a container. This is needed if skipReload is true, to load any notifiers defined at startup time. | `false` |
+| `smtp.existingSecret`                     | The name of an existing secret containing the SMTP credentials. | `""`                                  |
+| `smtp.userKey`                            | The key in the existing SMTP secret containing the username. | `"user"`                                 |
+| `smtp.passwordKey`                        | The key in the existing SMTP secret containing the password. | `"password"`                             |
+| `admin.existingSecret`                    | The name of an existing secret containing the admin credentials (can be templated). | `""`                                 |
+| `admin.userKey`                           | The key in the existing admin secret containing the username. | `"admin-user"`                          |
+| `admin.passwordKey`                       | The key in the existing admin secret containing the password. | `"admin-password"`                      |
+| `serviceAccount.autoMount`                | Automount the service account token in the pod| `true`                                                  |
+| `serviceAccount.annotations`              | ServiceAccount annotations                    |                                                         |
+| `serviceAccount.create`                   | Create service account                        | `true`                                                  |
+| `serviceAccount.labels`                   | ServiceAccount labels                         | `{}`                                                    |
+| `serviceAccount.name`                     | Service account name to use, when empty will be set to created account if `serviceAccount.create` is set else to `default` | `` |
+| `serviceAccount.nameTest`                 | Service account name to use for test, when empty will be set to created account if `serviceAccount.create` is set else to `default` | `nil` |
+| `rbac.create`                             | Create and use RBAC resources                 | `true`                                                  |
+| `rbac.namespaced`                         | Creates Role and Rolebinding instead of the default ClusterRole and ClusteRoleBindings for the grafana instance  | `false` |
+| `rbac.useExistingRole`                    | Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to the rolename set here. | `nil` |
+| `rbac.pspEnabled`                         | Create PodSecurityPolicy (with `rbac.create`, grant roles permissions as well) | `false`                |
+| `rbac.pspUseAppArmor`                     | Enforce AppArmor in created PodSecurityPolicy (requires `rbac.pspEnabled`)  | `false`                   |
+| `rbac.extraRoleRules`                     | Additional rules to add to the Role           | []                                                      |
+| `rbac.extraClusterRoleRules`              | Additional rules to add to the ClusterRole    | []                                                      |
+| `command`                                 | Define command to be executed by grafana container at startup | `nil`                                   |
+| `args`                                    | Define additional args if command is used     | `nil`                                                   |
+| `testFramework.enabled`                   | Whether to create test-related resources      | `true`                                                  |
+| `testFramework.image`                     | `test-framework` image repository.            | `bats/bats`                                             |
+| `testFramework.tag`                       | `test-framework` image tag.                   | `v1.4.1`                                                |
+| `testFramework.imagePullPolicy`           | `test-framework` image pull policy.           | `IfNotPresent`                                          |
+| `testFramework.securityContext`           | `test-framework` securityContext              | `{}`                                                    |
+| `downloadDashboards.env`                  | Environment variables to be passed to the `download-dashboards` container | `{}`                        |
+| `downloadDashboards.envFromSecret`        | Name of a Kubernetes secret (must be manually created in the same namespace) containing values to be added to the environment. Can be templated | `""` |
+| `downloadDashboards.resources`            | Resources of `download-dashboards` container  | `{}`                                                    |
+| `downloadDashboardsImage.repository`      | Curl docker image repo                        | `curlimages/curl`                                       |
+| `downloadDashboardsImage.tag`             | Curl docker image tag                         | `7.73.0`                                                |
+| `downloadDashboardsImage.sha`             | Curl docker image sha (optional)              | `""`                                                    |
+| `downloadDashboardsImage.pullPolicy`      | Curl docker image pull policy                 | `IfNotPresent`                                          |
+| `namespaceOverride`                       | Override the deployment namespace             | `""` (`Release.Namespace`)                              |
+| `serviceMonitor.enabled`                  | Use servicemonitor from prometheus operator   | `false`                                                 |
+| `serviceMonitor.namespace`                | Namespace this servicemonitor is installed in |                                                         |
+| `serviceMonitor.interval`                 | How frequently Prometheus should scrape       | `1m`                                                    |
+| `serviceMonitor.path`                     | Path to scrape                                | `/metrics`                                              |
+| `serviceMonitor.scheme`                   | Scheme to use for metrics scraping            | `http`                                                  |
+| `serviceMonitor.tlsConfig`                | TLS configuration block for the endpoint      | `{}`                                                    |
+| `serviceMonitor.labels`                   | Labels for the servicemonitor passed to Prometheus Operator      |  `{}`                                |
+| `serviceMonitor.scrapeTimeout`            | Timeout after which the scrape is ended       | `30s`                                                   |
+| `serviceMonitor.relabelings`              | MetricRelabelConfigs to apply to samples before ingestion.  | `[]`                                      |
+| `revisionHistoryLimit`                    | Number of old ReplicaSets to retain           | `10`                                                    |
+| `imageRenderer.enabled`                    | Enable the image-renderer deployment & service                                     | `false`                          |
+| `imageRenderer.image.repository`           | image-renderer Image repository                                                    | `grafana/grafana-image-renderer` |
+| `imageRenderer.image.tag`                  | image-renderer Image tag                                                           | `latest`                         |
+| `imageRenderer.image.sha`                  | image-renderer Image sha (optional)                                                | `""`                             |
+| `imageRenderer.image.pullPolicy`           | image-renderer ImagePullPolicy                                                     | `Always`                         |
+| `imageRenderer.env`                        | extra env-vars for image-renderer                                                  | `{}`                             |
+| `imageRenderer.serviceAccountName`         | image-renderer deployment serviceAccountName                                       | `""`                             |
+| `imageRenderer.securityContext`            | image-renderer deployment securityContext                                          | `{}`                             |
+| `imageRenderer.hostAliases`                | image-renderer deployment Host Aliases                                             | `[]`                             |
+| `imageRenderer.priorityClassName`          | image-renderer deployment priority class                                           | `''`                             |
+| `imageRenderer.service.enabled`            | Enable the image-renderer service                                                  | `true`                           |
+| `imageRenderer.service.portName`           | image-renderer service port name                                                   | `http`                           |
+| `imageRenderer.service.port`               | image-renderer port used by deployment                                             | `8081`                           |
+| `imageRenderer.service.targetPort`         | image-renderer service port used by service                                        | `8081`                           |
+| `imageRenderer.appProtocol`                | Adds the appProtocol field to the service                                          | ``                               |
+| `imageRenderer.grafanaSubPath`             | Grafana sub path to use for image renderer callback url                            | `''`                             |
+| `imageRenderer.podPortName`                | name of the image-renderer port on the pod                                         | `http`                           |
+| `imageRenderer.revisionHistoryLimit`       | number of image-renderer replica sets to keep                                      | `10`                             |
+| `imageRenderer.networkPolicy.limitIngress` | Enable a NetworkPolicy to limit inbound traffic from only the created grafana pods | `true`                           |
+| `imageRenderer.networkPolicy.limitEgress`  | Enable a NetworkPolicy to limit outbound traffic to only the created grafana pods  | `false`                          |
+| `imageRenderer.resources`                  | Set resource limits for image-renderer pdos                                        | `{}`                             |
+| `imageRenderer.nodeSelector`               | Node labels for pod assignment                | `{}`                                                    |
+| `imageRenderer.tolerations`                | Toleration labels for pod assignment          | `[]`                                                    |
+| `imageRenderer.affinity`                   | Affinity settings for pod assignment          | `{}`                                                    |
+| `networkPolicy.enabled`                    | Enable creation of NetworkPolicy resources.                                                                              | `false`             |
+| `networkPolicy.allowExternal`              | Don't require client label for connections                                                                               | `true`              |
+| `networkPolicy.explicitNamespacesSelector` | A Kubernetes LabelSelector to explicitly select namespaces from which traffic could be allowed                           | `{}`                |
+| `networkPolicy.ingress`                    | Enable the creation of an ingress network policy             | `true`    |
+| `networkPolicy.egress.enabled`             | Enable the creation of an egress network policy              | `false`   |
+| `networkPolicy.egress.ports`               | An array of ports to allow for the egress                    | `[]`    |
+| `enableKubeBackwardCompatibility`          | Enable backward compatibility of kubernetes where pod's defintion version below 1.13 doesn't have the enableServiceLinks option  | `false`     |
 
-| Name                        | Description                              | Value               |
-| --------------------------- | ---------------------------------------- | ------------------- |
-| `persistence.enabled`       | Enable persistence using PVC             | `true`              |
-| `persistence.storageClass`  | PVC Storage Class for SuiteCRM volume    | `""`                |
-| `persistence.accessModes`   | PVC Access Mode for SuiteCRM volume      | `["ReadWriteOnce"]` |
-| `persistence.size`          | PVC Storage Request for SuiteCRM volume  | `8Gi`               |
-| `persistence.existingClaim` | An Existing PVC name for SuiteCRM volume | `""`                |
-| `persistence.hostPath`      | Host mount path for SuiteCRM volume      | `""`                |
-| `persistence.annotations`   | Persistent Volume Claim annotations      | `{}`                |
+### Example ingress with path
 
-### Volume Permissions parameters
+With grafana 6.3 and above
 
-| Name                                   | Description                                                                                                                                               | Value                   |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `volumePermissions.enabled`            | Enable init container that changes volume permissions in the data directory (for cases where the default k8s `runAsUser` and `fsUser` values do not work) | `false`                 |
-| `volumePermissions.image.registry`     | Init container volume-permissions image registry                                                                                                          | `docker.io`             |
-| `volumePermissions.image.repository`   | Init container volume-permissions image repository                                                                                                        | `bitnami/bitnami-shell` |
-| `volumePermissions.image.tag`          | Init container volume-permissions image tag                                                                                                               | `11-debian-11-r112`     |
-| `volumePermissions.image.digest`       | Init container volume-permissions image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag                         | `""`                    |
-| `volumePermissions.image.pullPolicy`   | Init container volume-permissions image pull policy                                                                                                       | `IfNotPresent`          |
-| `volumePermissions.image.pullSecrets`  | Specify docker-registry secret names as an array                                                                                                          | `[]`                    |
-| `volumePermissions.resources.limits`   | The resources limits for the container                                                                                                                    | `{}`                    |
-| `volumePermissions.resources.requests` | The requested resources for the container                                                                                                                 | `{}`                    |
-
-### Traffic Exposure Parameters
-
-| Name                               | Description                                                                                                                      | Value                    |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `service.type`                     | Kubernetes Service type                                                                                                          | `LoadBalancer`           |
-| `service.ports.http`               | Service HTTP port                                                                                                                | `8080`                   |
-| `service.ports.https`              | Service HTTPS port                                                                                                               | `8443`                   |
-| `service.clusterIP`                | Static clusterIP or None for headless services                                                                                   | `""`                     |
-| `service.loadBalancerSourceRanges` | Service Load Balancer sources                                                                                                    | `[]`                     |
-| `service.loadBalancerIP`           | loadBalancerIP for the SuiteCRM Service (optional, cloud specific)                                                               | `""`                     |
-| `service.nodePorts.http`           | Kubernetes HTTP node port                                                                                                        | `""`                     |
-| `service.nodePorts.https`          | Kubernetes HTTPS node port                                                                                                       | `""`                     |
-| `service.externalTrafficPolicy`    | Enable client source IP preservation                                                                                             | `Cluster`                |
-| `service.extraPorts`               | Extra ports to expose (normally used with the `sidecar` value)                                                                   | `[]`                     |
-| `service.annotations`              | Additional custom annotations for SuiteCRM service                                                                               | `{}`                     |
-| `service.sessionAffinity`          | Session Affinity for Kubernetes service, can be "None" or "ClientIP"                                                             | `None`                   |
-| `service.sessionAffinityConfig`    | Additional settings for the sessionAffinity                                                                                      | `{}`                     |
-| `ingress.enabled`                  | Enable ingress controller resource                                                                                               | `false`                  |
-| `ingress.pathType`                 | Ingress path type                                                                                                                | `ImplementationSpecific` |
-| `ingress.apiVersion`               | Force Ingress API version (automatically detected if not set)                                                                    | `""`                     |
-| `ingress.hostname`                 | Default host for the ingress resource                                                                                            | `suitecrm.local`         |
-| `ingress.path`                     | Default path for the ingress record                                                                                              | `/`                      |
-| `ingress.annotations`              | Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations. | `{}`                     |
-| `ingress.tls`                      | Enable TLS configuration for the host defined at `ingress.hostname` parameter                                                    | `false`                  |
-| `ingress.extraHosts`               | An array with additional hostname(s) to be covered with the ingress record                                                       | `[]`                     |
-| `ingress.extraPaths`               | An array with additional arbitrary paths that may need to be added to the ingress under the main host                            | `[]`                     |
-| `ingress.extraTls`                 | TLS configuration for additional hostname(s) to be covered with this ingress record                                              | `[]`                     |
-| `ingress.secrets`                  | If you're providing your own certificates, please use this to add the certificates as secrets                                    | `[]`                     |
-| `ingress.ingressClassName`         | IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)                                                    | `""`                     |
-| `ingress.extraRules`               | Additional rules to be covered with this ingress record                                                                          | `[]`                     |
-
-### Metrics parameters
-
-| Name                                       | Description                                                                                                     | Value                     |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `metrics.enabled`                          | Start a side-car prometheus exporter                                                                            | `false`                   |
-| `metrics.image.registry`                   | Apache exporter image registry                                                                                  | `docker.io`               |
-| `metrics.image.repository`                 | Apache exporter image repository                                                                                | `bitnami/apache-exporter` |
-| `metrics.image.tag`                        | Apache exporter image tag (immutable tags are recommended)                                                      | `0.13.3-debian-11-r3`     |
-| `metrics.image.digest`                     | Apache exporter image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                      |
-| `metrics.image.pullPolicy`                 | Image pull policy                                                                                               | `IfNotPresent`            |
-| `metrics.image.pullSecrets`                | Specify docker-registry secret names as an array                                                                | `[]`                      |
-| `metrics.resources`                        | Metrics exporter resource requests and limits                                                                   | `{}`                      |
-| `metrics.podAnnotations`                   | Additional annotations for Metrics exporter pod                                                                 | `{}`                      |
-| `metrics.service.type`                     | Kubernetes service type for Prometheus metrics                                                                  | `ClusterIP`               |
-| `metrics.service.port`                     | Prometheus metrics service port                                                                                 | `9117`                    |
-| `metrics.service.annotations`              | Annotations for the Prometheus metrics service                                                                  | `{}`                      |
-| `metrics.service.clusterIP`                | SuiteCRM service Cluster IP                                                                                     | `""`                      |
-| `metrics.service.loadBalancerIP`           | SuiteCRM service Load Balancer IP                                                                               | `""`                      |
-| `metrics.service.loadBalancerSourceRanges` | SuiteCRM service Load Balancer sources                                                                          | `[]`                      |
-| `metrics.service.externalTrafficPolicy`    | SuiteCRM service external traffic policy                                                                        | `Cluster`                 |
-| `metrics.service.sessionAffinity`          | Session Affinity for Kubernetes service, can be "None" or "ClientIP"                                            | `None`                    |
-| `metrics.service.sessionAffinityConfig`    | Additional settings for the sessionAffinity                                                                     | `{}`                      |
-
-### Certificate injection parameters
-
-| Name                                                 | Description                                                                                                       | Value                                    |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `certificates.customCertificate.certificateSecret`   | Secret containing the certificate and key to add                                                                  | `""`                                     |
-| `certificates.customCertificate.chainSecret.name`    | Name of the secret containing the certificate chain                                                               | `""`                                     |
-| `certificates.customCertificate.chainSecret.key`     | Key of the certificate chain file inside the secret                                                               | `""`                                     |
-| `certificates.customCertificate.certificateLocation` | Location in the container to store the certificate                                                                | `/etc/ssl/certs/ssl-cert-snakeoil.pem`   |
-| `certificates.customCertificate.keyLocation`         | Location in the container to store the private key                                                                | `/etc/ssl/private/ssl-cert-snakeoil.key` |
-| `certificates.customCertificate.chainLocation`       | Location in the container to store the certificate chain                                                          | `/etc/ssl/certs/mychain.pem`             |
-| `certificates.customCAs`                             | Defines a list of secrets to import into the container trust store                                                | `[]`                                     |
-| `certificates.command`                               | Override default container command (useful when using custom images)                                              | `[]`                                     |
-| `certificates.args`                                  | Override default container args (useful when using custom images)                                                 | `[]`                                     |
-| `certificates.extraEnvVars`                          | Container sidecar extra environment variables                                                                     | `[]`                                     |
-| `certificates.extraEnvVarsCM`                        | ConfigMap containing extra environment variables                                                                  | `""`                                     |
-| `certificates.extraEnvVarsSecret`                    | Secret containing extra environment variables (in case of sensitive data)                                         | `""`                                     |
-| `certificates.image.registry`                        | Container sidecar registry                                                                                        | `docker.io`                              |
-| `certificates.image.repository`                      | Container sidecar image repository                                                                                | `bitnami/bitnami-shell`                  |
-| `certificates.image.tag`                             | Container sidecar image tag (immutable tags are recommended)                                                      | `11-debian-11-r112`                      |
-| `certificates.image.digest`                          | Container sidecar image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag | `""`                                     |
-| `certificates.image.pullPolicy`                      | Container sidecar image pull policy                                                                               | `IfNotPresent`                           |
-| `certificates.image.pullSecrets`                     | Container sidecar image pull secrets                                                                              | `[]`                                     |
-
-### NetworkPolicy parameters
-
-| Name                                                          | Description                                                                                                                  | Value   |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `networkPolicy.enabled`                                       | Enable network policies                                                                                                      | `false` |
-| `networkPolicy.metrics.enabled`                               | Enable network policy for metrics (prometheus)                                                                               | `false` |
-| `networkPolicy.metrics.namespaceSelector`                     | Monitoring namespace selector labels. These labels will be used to identify the prometheus' namespace.                       | `{}`    |
-| `networkPolicy.metrics.podSelector`                           | Monitoring pod selector labels. These labels will be used to identify the Prometheus pods.                                   | `{}`    |
-| `networkPolicy.ingress.enabled`                               | Enable network policy for Ingress Proxies                                                                                    | `false` |
-| `networkPolicy.ingress.namespaceSelector`                     | Ingress Proxy namespace selector labels. These labels will be used to identify the Ingress Proxy's namespace.                | `{}`    |
-| `networkPolicy.ingress.podSelector`                           | Ingress Proxy pods selector labels. These labels will be used to identify the Ingress Proxy pods.                            | `{}`    |
-| `networkPolicy.ingressRules.backendOnlyAccessibleByFrontend`  | Enable ingress rule that makes the backend (mariadb) only accessible by SuiteCRM's pods.                                     | `false` |
-| `networkPolicy.ingressRules.customBackendSelector`            | Backend selector labels. These labels will be used to identify the backend pods.                                             | `{}`    |
-| `networkPolicy.ingressRules.accessOnlyFrom.enabled`           | Enable ingress rule that makes SuiteCRM only accessible from a particular origin                                             | `false` |
-| `networkPolicy.ingressRules.accessOnlyFrom.namespaceSelector` | Namespace selector label that is allowed to access SuiteCRM. This label will be used to identified the allowed namespace(s). | `{}`    |
-| `networkPolicy.ingressRules.accessOnlyFrom.podSelector`       | Pods selector label that is allowed to access SuiteCRM. This label will be used to identified the allowed pod(s).            | `{}`    |
-| `networkPolicy.ingressRules.customRules`                      | Custom network policy ingress rule                                                                                           | `{}`    |
-| `networkPolicy.egressRules.denyConnectionsToExternal`         | Enable egress rule that denies outgoing traffic outside the cluster, except for DNS (port 53).                               | `false` |
-| `networkPolicy.egressRules.customRules`                       | Custom network policy rule                                                                                                   | `{}`    |
-
-The above parameters map to the env variables defined in [bitnami/suitecrm](https://github.com/bitnami/containers/tree/main/bitnami/suitecrm). For more information please refer to the [bitnami/suitecrm](https://github.com/bitnami/containers/tree/main/bitnami/suitecrm) image documentation.
-
-> **Note**:
->
-> For SuiteCRM to function correctly, you should specify the `suitecrmHost` parameter to specify the FQDN (recommended) or the public IP address of the SuiteCRM service.
->
-> Optionally, you can specify the `suitecrmLoadBalancerIP` parameter to assign a reserved IP address to the SuiteCRM service of the chart. However please note that this feature is only available on a few cloud providers (f.e. GKE).
->
-> To reserve a public IP address on GKE:
->
-> ```console
-> $ gcloud compute addresses create suitecrm-public-ip
-> ```
->
-> The reserved IP address can be associated to the SuiteCRM service by specifying it as the value of the `suitecrmLoadBalancerIP` parameter while installing the chart.
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
-
-```console
-helm install my-release \
-  --set suitecrmUsername=admin,suitecrmPassword=password,mariadb.auth.rootPassword=secretpassword \
-    oci://registry-1.docker.io/bitnamicharts/suitecrm
+```yaml
+grafana.ini:
+  server:
+    domain: monitoring.example.com
+    root_url: "%(protocol)s://%(domain)s/grafana"
+    serve_from_sub_path: true
+ingress:
+  enabled: true
+  hosts:
+    - "monitoring.example.com"
+  path: "/grafana"
 ```
 
-The above command sets the SuiteCRM administrator account username and password to `admin` and `password` respectively. Additionally, it sets the MariaDB `root` user password to `secretpassword`.
+### Example of extraVolumeMounts
 
-> NOTE: Once this chart is deployed, it is not possible to change the application's access credentials, such as usernames or passwords, using Helm. To change these application credentials after deployment, delete any persistent volumes (PVs) used by the chart and re-deploy it, or use the application's built-in administrative tools if available.
+Volume can be type persistentVolumeClaim or hostPath but not both at same time.
+If neither existingClaim or hostPath argument is given then type is emptyDir.
 
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
-
-```console
-helm install my-release -f values.yaml oci://registry-1.docker.io/bitnamicharts/suitecrm
+```yaml
+- extraVolumeMounts:
+  - name: plugins
+    mountPath: /var/lib/grafana/plugins
+    subPath: configs/grafana/plugins
+    existingClaim: existing-grafana-claim
+    readOnly: false
+  - name: dashboards
+    mountPath: /var/lib/grafana/dashboards
+    hostPath: /usr/shared/grafana/dashboards
+    readOnly: false
 ```
 
-> **Tip**: You can use the default [values.yaml](values.yaml)
+## Import dashboards
 
-## Configuration and installation details
+There are a few methods to import dashboards to Grafana. Below are some examples and explanations as to how to use each method:
 
-### [Rolling VS Immutable tags](https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/)
+```yaml
+dashboards:
+  default:
+    some-dashboard:
+      json: |
+        {
+          "annotations":
 
-It is strongly recommended to use immutable tags in a production environment. This ensures your deployment does not change automatically if the same tag is updated with a different image.
+          ...
+          # Complete json file here
+          ...
 
-Bitnami will release a new chart updating its containers if a new version of the main container, significant changes, or critical vulnerabilities exist.
-
-### Image
-
-The `image` parameter allows specifying which image will be pulled for the chart.
-
-#### Private registry
-
-If you configure the `image` value to one in a private registry, you will need to [specify an image pull secret](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
-
-1. Manually create image pull secret(s) in the namespace. See [this YAML example reference](https://kubernetes.io/docs/concepts/containers/images/#creating-a-secret-with-a-docker-config). Consult your image registry's documentation about getting the appropriate secret.
-2. Note that the `imagePullSecrets` configuration value cannot currently be passed to helm using the `--set` parameter, so you must supply these using a `values.yaml` file, such as:
-
-    ```yaml
-    imagePullSecrets:
-      - name: SECRET_NAME
-    ```
-
-3. Install the chart
-
-### Setting Pod's affinity
-
-This chart allows you to set your custom affinity using the `affinity` paremeter. Find more infomation about Pod's affinity in the [kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).
-
-As an alternative, you can use of the preset configurations for pod affinity, pod anti-affinity, and node affinity available at the [bitnami/common](https://github.com/bitnami/charts/tree/main/bitnami/common#affinities) chart. To do so, set the `podAffinityPreset`, `podAntiAffinityPreset`, or `nodeAffinityPreset` parameters.
-
-## Persistence
-
-The [Bitnami SuiteCRM](https://github.com/bitnami/containers/tree/main/bitnami/suitecrm) image stores the SuiteCRM data and configurations at the `/bitnami/suitecrm` path of the container.
-
-Persistent Volume Claims are used to keep the data across deployments. This is known to work in GCE, AWS, and minikube.
-See the [Parameters](#parameters) section to configure the PVC or to disable persistence.
-
-### Existing PersistentVolumeClaim
-
-1. Create the PersistentVolume
-2. Create the PersistentVolumeClaim
-3. Install the chart
-
-    ```console
-    helm install my-release --set persistence.existingClaim=PVC_NAME oci://registry-1.docker.io/bitnamicharts/suitecrm
-    ```
-
-### Host path
-
-#### System compatibility
-
-- The local filesystem accessibility to a container in a pod with `hostPath` has been tested on OSX/MacOS with xhyve, and Linux with VirtualBox.
-- Windows has not been tested with the supported VM drivers. Minikube does however officially support [Mounting Host Folders](https://minikube.sigs.k8s.io/docs/handbook/mount/) per pod. Or you may manually sync your container whenever host files are changed with tools like [docker-sync](https://github.com/EugenMayer/docker-sync) or [docker-bg-sync](https://github.com/cweagans/docker-bg-sync).
-
-#### Mounting steps
-
-1. The specified `hostPath` directory must already exist (create one if it does not).
-2. Install the chart
-
-    ```console
-    helm install my-release --set persistence.hostPath=/PATH/TO/HOST/MOUNT oci://registry-1.docker.io/bitnamicharts/suitecrm
-    ```
-
-    This will mount the `suitecrm-data` volume into the `hostPath` directory. The site data will be persisted if the mount path contains valid data, else the site data will be initialized at first launch.
-3. Because the container cannot control the host machine's directory permissions, you must set the SuiteCRM file directory permissions yourself and disable or clear SuiteCRM cache.
-
-## Troubleshooting
-
-Find more information about how to deal with common errors related to Bitnami's Helm charts in [this troubleshooting guide](https://docs.bitnami.com/general/how-to/troubleshoot-helm-chart-issues).
-
-## Upgrading
-
-### To 12.0.0
-
-This major release bumps the MariaDB version to 10.11. Follow the [upstream instructions](https://mariadb.com/kb/en/upgrading-from-mariadb-10-6-to-mariadb-10-11/) for upgrading from MariaDB 10.6 to 10.11. No major issues are expected during the upgrade.
-
-### To 11.0.0
-
-This major release bumps the MariaDB version to 10.6. Follow the [upstream instructions](https://mariadb.com/kb/en/upgrading-from-mariadb-105-to-mariadb-106/) for upgrading from MariaDB 10.5 to 10.6. No major issues are expected during the upgrade.
-
-### To 10.0.0
-
-This major release renames several values in this chart and adds missing features, in order to be inline with the rest of assets in the Bitnami charts repository.
-
-Affected values:
-
-- `service.port` was deprecated. We recommend using `service.ports.http` instead.
-- `service.httpsPort` was deprecated. We recommend using `service.ports.https` instead.
-- `ingress.hosts` was renamed as `ingress.extraHosts`.
-
-Additionally updates the MariaDB subchart to it newest major, 10.0.0, which contains similar changes. Check [MariaDB Upgrading Notes](https://github.com/bitnami/charts/tree/main/bitnami/mariadb#to-1000) for more information.
-
-### To 9.0.0
-
-In this major there were three main changes introduced:
-
-- Adaptation to Helm v2 EOL
-- Updated MariaDB dependency version
-- Migration to non-root
-
-Please read the update notes carefully.
-
-#### 1. Adaptation to Helm v2 EOL
-
-[On November 13, 2020, Helm v2 support was formally finished](https://github.com/helm/charts#status-of-the-project), this major version is the result of the required changes applied to the Helm Chart to be able to incorporate the different features added in Helm v3 and to be consistent with the Helm project itself regarding the Helm v2 EOL.
-
-##### What changes were introduced in this major version?
-
-- Previous versions of this Helm Chart use `apiVersion: v1` (installable by both Helm 2 and 3), this Helm Chart was updated to `apiVersion: v2` (installable by Helm 3 only). [Here](https://helm.sh/docs/topics/charts/#the-apiversion-field) you can find more information about the `apiVersion` field.
-- Move dependency information from the *requirements.yaml* to the *Chart.yaml*
-- After running `helm dependency update`, a *Chart.lock* file is generated containing the same structure used in the previous *requirements.lock*
-- The different fields present in the *Chart.yaml* file has been ordered alphabetically in a homogeneous way for all the Bitnami Helm Charts
-
-##### Considerations when upgrading to this version
-
-- If you want to upgrade to this version from a previous one installed with Helm v3, you shouldn't face any issues
-- If you want to upgrade to this version using Helm v2, this scenario is not supported as this version doesn't support Helm v2 anymore
-- If you installed the previous version with Helm v2 and wants to upgrade to this version with Helm v3, please refer to the [official Helm documentation](https://helm.sh/docs/topics/v2_v3_migration/#migration-use-cases) about migrating from Helm v2 to v3
-
-##### Useful links
-
-- <https://docs.bitnami.com/tutorials/resolve-helm2-helm3-post-migration-issues/>
-- <https://helm.sh/docs/topics/v2_v3_migration/>
-- <https://helm.sh/blog/migrate-from-helm-v2-to-helm-v3/>
-
-#### 2. Updated MariaDB dependency version
-
-In this major the MariaDB dependency version was also bumped to a new major version that introduces several incompatilibites. Therefore, backwards compatibility is not guaranteed unless an external database is used. Check [MariaDB Upgrading Notes](https://github.com/bitnami/charts/tree/main/bitnami/mariadb#to-800) for more information.
-
-#### 3. Migration of the SuiteCRM image to non-root
-
-The [Bitnami SuiteCRM](https://github.com/bitnami/containers/tree/main/bitnami/suitecrm) image was updated to support and enable the "non-root" user approach
-
-If you want to continue to run the container image as the `root` user, you need to set `podSecurityContext.enabled=false` and `containerSecurity.context.enabled=false`.
-
-Consequences:
-
-- The HTTP/HTTPS ports exposed by the container are now `8080/8443` instead of `80/443`.
-- Backwards compatibility is not guaranteed.
-
-To upgrade to `9.0.0`, you can either install a new SuiteCRM chart and migrate your site or reuse the PVCs used to hold both the MariaDB and SuiteCRM data on your previous release. To do so, follow the instructions below (the following example assumes that the release name is `suitecrm` and that a `rootUser.password` was defined for MariaDB in `values.yaml` when the chart was first installed):
-
-> NOTE: Please, create a backup of your database before running any of those actions. The steps below would be only valid if your application (e.g. any plugins or custom code) is compatible with MariaDB 10.5.x
-
-Obtain the credentials and the names of the PVCs used to hold both the MariaDB and SuiteCRM data on your current release:
-
-```console
-export SUITECRM_HOST=$(kubectl get svc --namespace default suitecrm --template "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}")
-export SUITECRM_PASSWORD=$(kubectl get secret --namespace default suitecrm -o jsonpath="{.data.suitecrm-password}" | base64 -d)
-export MARIADB_ROOT_PASSWORD=$(kubectl get secret --namespace default suitecrm-mariadb -o jsonpath="{.data.mariadb-root-password}" | base64 -d)
-export MARIADB_PASSWORD=$(kubectl get secret --namespace default suitecrm-mariadb -o jsonpath="{.data.mariadb-password}" | base64 -d)
-export MARIADB_PVC=$(kubectl get pvc -l app=mariadb,component=master,release=suitecrm -o jsonpath="{.items[0].metadata.name}")
+          "title": "Some Dashboard",
+          "uid": "abcd1234",
+          "version": 1
+        }
+    custom-dashboard:
+      # This is a path to a file inside the dashboards directory inside the chart directory
+      file: dashboards/custom-dashboard.json
+    prometheus-stats:
+      # Ref: https://grafana.com/dashboards/2
+      gnetId: 2
+      revision: 2
+      datasource: Prometheus
+    loki-dashboard-quick-search:
+      gnetId: 12019
+      revision: 2
+      datasource:
+      - name: DS_PROMETHEUS
+        value: Prometheus
+      - name: DS_LOKI
+        value: Loki
+    local-dashboard:
+      url: https://raw.githubusercontent.com/user/repository/master/dashboards/dashboard.json
 ```
 
-Upgrade your release (maintaining the version) disabling MariaDB and scaling SuiteCRM replicas to 0:
+## BASE64 dashboards
 
-```console
-helm upgrade suitecrm oci://registry-1.docker.io/bitnamicharts/suitecrm --set suitecrmPassword=$SUITECRM_PASSWORD --set replicaCount=0 --set mariadb.enabled=false --version 8.0.26
+Dashboards could be stored on a server that does not return JSON directly and instead of it returns a Base64 encoded file (e.g. Gerrit)
+A new parameter has been added to the url use case so if you specify a b64content value equals to true after the url entry a Base64 decoding is applied before save the file to disk.
+If this entry is not set or is equals to false not decoding is applied to the file before saving it to disk.
+
+### Gerrit use case
+
+Gerrit API for download files has the following schema: <https://yourgerritserver/a/{project-name}/branches/{branch-id}/files/{file-id}/content> where {project-name} and
+{file-id} usually has '/' in their values and so they MUST be replaced by %2F so if project-name is user/repo, branch-id is master and file-id is equals to dir1/dir2/dashboard
+the url value is <https://yourgerritserver/a/user%2Frepo/branches/master/files/dir1%2Fdir2%2Fdashboard/content>
+
+## Sidecar for dashboards
+
+If the parameter `sidecar.dashboards.enabled` is set, a sidecar container is deployed in the grafana
+pod. This container watches all configmaps (or secrets) in the cluster and filters out the ones with
+a label as defined in `sidecar.dashboards.label`. The files defined in those configmaps are written
+to a folder and accessed by grafana. Changes to the configmaps are monitored and the imported
+dashboards are deleted/updated.
+
+A recommendation is to use one configmap per dashboard, as a reduction of multiple dashboards inside
+one configmap is currently not properly mirrored in grafana.
+
+Example dashboard config:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-grafana-dashboard
+  labels:
+     grafana_dashboard: "1"
+data:
+  k8s-dashboard.json: |-
+  [...]
 ```
 
-Finally, upgrade your release to `9.0.0` reusing the existing PVC, and enabling back MariaDB:
+## Sidecar for datasources
 
-```console
-helm upgrade suitecrm oci://registry-1.docker.io/bitnamicharts/suitecrm --set mariadb.primary.persistence.existingClaim=$MARIADB_PVC --set mariadb.auth.rootPassword=$MARIADB_ROOT_PASSWORD --set mariadb.auth.password=$MARIADB_PASSWORD --set suitecrmPassword=$SUITECRM_PASSWORD --set containerSecurityContext.runAsUser=0 --set podSecurityContext.fsGroup=0
+If the parameter `sidecar.datasources.enabled` is set, an init container is deployed in the grafana
+pod. This container lists all secrets (or configmaps, though not recommended) in the cluster and
+filters out the ones with a label as defined in `sidecar.datasources.label`. The files defined in
+those secrets are written to a folder and accessed by grafana on startup. Using these yaml files,
+the data sources in grafana can be imported.
+
+Should you aim for reloading datasources in Grafana each time the config is changed, set `sidecar.datasources.skipReload: false` and adjust `sidecar.datasources.reloadURL` to `http://<svc-name>.<namespace>.svc.cluster.local/api/admin/provisioning/datasources/reload`.
+
+Secrets are recommended over configmaps for this usecase because datasources usually contain private
+data like usernames and passwords. Secrets are the more appropriate cluster resource to manage those.
+
+Example values to add a postgres datasource as a kubernetes secret:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-datasources
+  labels:
+    grafana_datasource: 'true' # default value for: sidecar.datasources.label
+stringData:
+  pg-db.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: My pg db datasource
+        type: postgres
+        url: my-postgresql-db:5432
+        user: db-readonly-user
+        secureJsonData:
+          password: 'SUperSEcretPa$$word'
+        jsonData:
+          database: my_datase
+          sslmode: 'disable' # disable/require/verify-ca/verify-full
+          maxOpenConns: 0 # Grafana v5.4+
+          maxIdleConns: 2 # Grafana v5.4+
+          connMaxLifetime: 14400 # Grafana v5.4+
+          postgresVersion: 1000 # 903=9.3, 904=9.4, 905=9.5, 906=9.6, 1000=10
+          timescaledb: false
+        # <bool> allow users to edit datasources from the UI.
+        editable: false
 ```
 
-You should see the lines below in MariaDB container logs:
+Example values to add a datasource adapted from [Grafana](http://docs.grafana.org/administration/provisioning/#example-datasource-config-file):
 
-```console
-$ kubectl logs $(kubectl get pods -l app.kubernetes.io/instance=suitecrm,app.kubernetes.io/name=mariadb,app.kubernetes.io/component=primary -o jsonpath="{.items[0].metadata.name}")
-...
-mariadb 12:13:24.98 INFO  ==> Using persisted data
-mariadb 12:13:25.01 INFO  ==> Running mysql_upgrade
-...
+```yaml
+datasources:
+ datasources.yaml:
+   apiVersion: 1
+   datasources:
+      # <string, required> name of the datasource. Required
+    - name: Graphite
+      # <string, required> datasource type. Required
+      type: graphite
+      # <string, required> access mode. proxy or direct (Server or Browser in the UI). Required
+      access: proxy
+      # <int> org id. will default to orgId 1 if not specified
+      orgId: 1
+      # <string> url
+      url: http://localhost:8080
+      # <string> database password, if used
+      password:
+      # <string> database user, if used
+      user:
+      # <string> database name, if used
+      database:
+      # <bool> enable/disable basic auth
+      basicAuth:
+      # <string> basic auth username
+      basicAuthUser:
+      # <string> basic auth password
+      basicAuthPassword:
+      # <bool> enable/disable with credentials headers
+      withCredentials:
+      # <bool> mark as default datasource. Max one per org
+      isDefault:
+      # <map> fields that will be converted to json and stored in json_data
+      jsonData:
+         graphiteVersion: "1.1"
+         tlsAuth: true
+         tlsAuthWithCACert: true
+      # <string> json object of data that will be encrypted.
+      secureJsonData:
+        tlsCACert: "..."
+        tlsClientCert: "..."
+        tlsClientKey: "..."
+      version: 1
+      # <bool> allow users to edit datasources from the UI.
+      editable: false
 ```
 
-This upgrade also adapts the chart to the latest Bitnami good practices. Check the Parameters section for more information.
+## Sidecar for notifiers
 
-### To 8.0.0
+If the parameter `sidecar.notifiers.enabled` is set, an init container is deployed in the grafana
+pod. This container lists all secrets (or configmaps, though not recommended) in the cluster and
+filters out the ones with a label as defined in `sidecar.notifiers.label`. The files defined in
+those secrets are written to a folder and accessed by grafana on startup. Using these yaml files,
+the notification channels in grafana can be imported. The secrets must be created before
+`helm install` so that the notifiers init container can list the secrets.
 
-Helm performs a lookup for the object based on its group (apps), version (v1), and kind (Deployment). Also known as its GroupVersionKind, or GVK. Changing the GVK is considered a compatibility breaker from Kubernetes' point of view, so you cannot "upgrade" those objects to the new GVK in-place. Earlier versions of Helm 3 did not perform the lookup correctly which has since been fixed to match the spec.
+Secrets are recommended over configmaps for this usecase because alert notification channels usually contain
+private data like SMTP usernames and passwords. Secrets are the more appropriate cluster resource to manage those.
 
-In <https://github.com/helm/charts/pull/17310> the `apiVersion` of the deployment resources was updated to `apps/v1` in tune with the api's deprecated, resulting in compatibility breakage.
+Example datasource config adapted from [Grafana](https://grafana.com/docs/grafana/latest/administration/provisioning/#alert-notification-channels):
 
-This major version signifies this change.
+```yaml
+notifiers:
+  - name: notification-channel-1
+    type: slack
+    uid: notifier1
+    # either
+    org_id: 2
+    # or
+    org_name: Main Org.
+    is_default: true
+    send_reminder: true
+    frequency: 1h
+    disable_resolve_message: false
+    # See `Supported Settings` section for settings supporter for each
+    # alert notification type.
+    settings:
+      recipient: 'XXX'
+      token: 'xoxb'
+      uploadImage: true
+      url: https://slack.com
 
-### To 3.0.0
-
-Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
-Use the workaround below to upgrade from versions previous to 3.0.0. The following example assumes that the release name is suitecrm:
-
-```console
-kubectl patch deployment suitecrm-suitecrm --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
-kubectl delete statefulset suitecrm-mariadb --cascade=false
+delete_notifiers:
+  - name: notification-channel-1
+    uid: notifier1
+    org_id: 2
+  - name: notification-channel-2
+    # default org_id: 1
 ```
 
-## Community supported solution
+## Provision alert rules, contact points, notification policies and notification templates
 
-Please, note this Helm chart is a community-supported solution. This means that the Bitnami team is not actively working on new features/improvements nor providing support through GitHub Issues for this Helm chart. Any new issue will stay open for 20 days to allow the community to contribute, after 15 days without activity the issue will be marked as stale being closed after 5 days.
+There are two methods to provision alerting configuration in Grafana. Below are some examples and explanations as to how to use each method:
 
-The Bitnami team will review any PR that is created, feel free to create a PR if you find any issue or want to implement a new feature.
+```yaml
+alerting:
+  team1-alert-rules.yaml:
+    file: alerting/team1/rules.yaml
+  team2-alert-rules.yaml:
+    file: alerting/team2/rules.yaml
+  team3-alert-rules.yaml:
+    file: alerting/team3/rules.yaml
+  notification-policies.yaml:
+    file: alerting/shared/notification-policies.yaml
+  notification-templates.yaml:
+    file: alerting/shared/notification-templates.yaml
+  contactpoints.yaml:
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: Slack channel
+        receivers:
+          - uid: default-receiver
+            type: slack
+            settings:
+              # Webhook URL to be filled in
+              url: ""
+              # We need to escape double curly braces for the tpl function.
+              text: '{{ `{{ template "default.message" . }}` }}'
+              title: '{{ `{{ template "default.title" . }}` }}'
+```
 
-New versions are not going to be affected. Once a new version is released in the upstream project, the Bitnami container image will be updated to use the latest version.
+There are two possibilities:
 
-## License
+* Inlining the file contents as described in the example `values.yaml` and the official [Grafana documentation](https://grafana.com/docs/grafana/next/alerting/set-up/provision-alerting-resources/file-provisioning/).
+* Importing a file using a relative path starting from the chart root directory.
 
-Copyright &copy; 2023 Bitnami
+### Important notes on file provisioning
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+* The chart supports importing YAML and JSON files.
+* The filename must be unique, otherwise one volume mount will overwrite the other.
+* In case of inlining, double curly braces that arise from the Grafana configuration format and are not intended as templates for the chart must be escaped.
+* The number of total files under `alerting:` is not limited. Each file will end up as a volume mount in the corresponding provisioning folder of the deployed Grafana instance.
+* The file size for each import is limited by what the function `.Files.Get` can handle, which suffices for most cases.
 
-<http://www.apache.org/licenses/LICENSE-2.0>
+## How to serve Grafana with a path prefix (/grafana)
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+In order to serve Grafana with a prefix (e.g., <http://example.com/grafana>), add the following to your values.yaml.
+
+```yaml
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+  path: /grafana/?(.*)
+  hosts:
+    - k8s.example.dev
+
+grafana.ini:
+  server:
+    root_url: http://localhost:3000/grafana # this host can be localhost
+```
+
+## How to securely reference secrets in grafana.ini
+
+This example uses Grafana [file providers](https://grafana.com/docs/grafana/latest/administration/configuration/#file-provider) for secret values and the `extraSecretMounts` configuration flag (Additional grafana server secret mounts) to mount the secrets.
+
+In grafana.ini:
+
+```yaml
+grafana.ini:
+  [auth.generic_oauth]
+  enabled = true
+  client_id = $__file{/etc/secrets/auth_generic_oauth/client_id}
+  client_secret = $__file{/etc/secrets/auth_generic_oauth/client_secret}
+```
+
+Existing secret, or created along with helm:
+
+```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-generic-oauth-secret
+type: Opaque
+stringData:
+  client_id: <value>
+  client_secret: <value>
+```
+
+Include in the `extraSecretMounts` configuration flag:
+
+```yaml
+- extraSecretMounts:
+  - name: auth-generic-oauth-secret-mount
+    secretName: auth-generic-oauth-secret
+    defaultMode: 0440
+    mountPath: /etc/secrets/auth_generic_oauth
+    readOnly: true
+```
+
+### extraSecretMounts using a Container Storage Interface (CSI) provider
+
+This example uses a CSI driver e.g. retrieving secrets using [Azure Key Vault Provider](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
+
+```yaml
+- extraSecretMounts:
+  - name: secrets-store-inline
+    mountPath: /run/secrets
+    readOnly: true
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: "my-provider"
+      nodePublishSecretRef:
+        name: akv-creds
+```
+
+## Image Renderer Plug-In
+
+This chart supports enabling [remote image rendering](https://github.com/grafana/grafana-image-renderer/blob/master/README.md#run-in-docker)
+
+```yaml
+imageRenderer:
+  enabled: true
+```
+
+### Image Renderer NetworkPolicy
+
+By default the image-renderer pods will have a network policy which only allows ingress traffic from the created grafana instance
+
+### High Availability for unified alerting
+
+If you want to run Grafana in a high availability cluster you need to enable
+the headless service by setting `headlessService: true` in your `values.yaml`
+file.
+
+As next step you have to setup the `grafana.ini` in your `values.yaml` in a way
+that it will make use of the headless service to obtain all the IPs of the
+cluster. You should replace ``{{ Name }}`` with the name of your helm deployment.
+
+```yaml
+grafana.ini:
+  ...
+  unified_alerting:
+    enabled: true
+    ha_peers: {{ Name }}-headless:9094
+    ha_listen_address: ${POD_IP}:9094
+    ha_advertise_address: ${POD_IP}:9094
+
+  alerting:
+    enabled: false
+```

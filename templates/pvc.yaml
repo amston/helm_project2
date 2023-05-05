@@ -1,36 +1,36 @@
-{{- if and (include "suitecrm.host" .) .Values.persistence.enabled (not .Values.persistence.existingClaim) -}}
-kind: PersistentVolumeClaim
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) (eq .Values.persistence.type "pvc")}}
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "common.names.fullname" . }}-suitecrm
-  namespace: {{ .Release.Namespace | quote }}
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+  name: {{ include "grafana.fullname" . }}
+  namespace: {{ include "grafana.namespace" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+    {{- with .Values.persistence.extraPvcLabels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- if or .Values.persistence.annotations .Values.commonAnnotations }}
+  {{- with .Values.persistence.annotations  }}
   annotations:
-    {{- if .Values.persistence.annotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.persistence.annotations "context" $ ) | nindent 4 }}
-    {{- end }}
-    {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.persistence.finalizers  }}
+  finalizers:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.persistence.hostPath }}
-  storageClassName: ""
-  {{- end }}
   accessModes:
-  {{- if not (empty .Values.persistence.accessModes) }}
-  {{- range .Values.persistence.accessModes }}
+    {{- range .Values.persistence.accessModes }}
     - {{ . | quote }}
-  {{- end }}
-  {{- else }}
-    - {{ .Values.persistence.accessMode | quote }}
-  {{- end }}
+    {{- end }}
   resources:
     requests:
       storage: {{ .Values.persistence.size | quote }}
-  {{- include "suitecrm.storageClass" . | nindent 2 }}
-{{- end -}}
+  {{- with .Values.persistence.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.persistence.selectorLabels }}
+  selector:
+    matchLabels:
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
+{{- end }}

@@ -1,9 +1,9 @@
-{{- if .Values.gossipKey }}
+{{- if .Values.initScripts }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ printf "%s-gossip-key" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" }}
-  namespace: {{ .Release.Namespace | quote }}
+  name: {{ printf "%s-init-scripts" (include "common.names.fullname" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -11,7 +11,6 @@ metadata:
   {{- if .Values.commonAnnotations }}
   annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
-type: Opaque
 data:
-  gossip-key: {{ .Values.gossipKey | b64enc }}
+{{- include "common.tplvalues.render" ( dict "value" .Values.initScripts "context" $ ) | nindent 2 }}
 {{- end }}

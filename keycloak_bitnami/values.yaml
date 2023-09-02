@@ -62,11 +62,14 @@ rbac:
 # SecurityContext for the entire Pod. Every container running in the Pod will inherit this SecurityContext. This might be relevant when other components of the environment inject additional containers into running Pods (service meshes are the most prominent example for this)
 podSecurityContext:
   fsGroup: 1000
+  allowPrivilegeEscalation: 'false'
 
 # SecurityContext for the Keycloak container
 securityContext:
   runAsUser: 1000
   runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
 
 # Additional init containers, e. g. for providing custom themes
 extraInitContainers: ""
@@ -186,13 +189,13 @@ startupProbe: |
   periodSeconds: 5
 
 # Pod resource requests and limits
-resources: {}
-  # requests:
-  #   cpu: "500m"
-  #   memory: "1024Mi"
-  # limits:
-  #   cpu: "500m"
-  #   memory: "1024Mi"
+resources:
+  requests:          # comment removed 29.8.2023
+    cpu: "500m"
+    memory: "1024Mi" # comment removed 29.8.2023
+  limits:        # comment removed 29.8.2023
+    cpu: "500m"
+    memory: "1024Mi" # comment removed 29.8.2023
 
 # Startup scripts to run before Keycloak starts up
 startupScripts:
@@ -322,7 +325,7 @@ ingress:
 ## Network policy configuration
 networkPolicy:
   # If true, the Network policies are deployed
-  enabled: false
+  enabled: true
 
   # Additional Network policy labels
   labels: {}
@@ -385,7 +388,7 @@ postgresql:
   postgresqlDatabase: keycloak
   # PostgreSQL network policy configuration
   networkPolicy:
-    enabled: false
+    enabled: true
 
 serviceMonitor:
   # If `true`, a ServiceMonitor resource for the prometheus-operator is created
@@ -498,7 +501,10 @@ test:
   # SecurityContext for the entire test Pod
   podSecurityContext:
     fsGroup: 1000
+    allowPrivilegeEscalation: false
   # SecurityContext for the test container
   securityContext:
     runAsUser: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true

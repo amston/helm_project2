@@ -155,6 +155,7 @@ lifecycleHooks: {}
 securityContext:
   enabled: true
   fsGroup: 1001
+
 ## Container Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 ## @param containerSecurityContext.enabled Enable container security context
@@ -163,6 +164,9 @@ securityContext:
 containerSecurityContext:
   enabled: true
   runAsUser: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
 ## Pod Service Account
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 ##
@@ -742,12 +746,15 @@ readReplicas:
 ##
 resources:
   requests:
-    memory: 256Mi
+    memory: 256i
+    cpu: 250m
+  limits:
+    memory: 256i
     cpu: 250m
 networkPolicy:
   ## @param networkPolicy.enabled Enable creation of NetworkPolicy resources. Only Ingress traffic is filtered for now.
   ##
-  enabled: false
+  enabled: true
   ## @param networkPolicy.allowExternal Don't require client label for connections
   ## The Policy model to apply. When set to false, only pods with the correct
   ## client label will have network access to the port PostgreSQL is listening
@@ -967,6 +974,8 @@ metrics:
   securityContext:
     enabled: false
     runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
   ## Configure extra options for liveness probe
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
   ## @param metrics.livenessProbe.enabled Enable livenessProbe

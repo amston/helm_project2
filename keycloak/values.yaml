@@ -283,6 +283,9 @@ extraContainerPorts: []
 podSecurityContext:
   enabled: true
   fsGroup: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
 ## Keycloak containers' Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
 ## @param containerSecurityContext.enabled Enabled Keycloak containers' Security Context
@@ -293,14 +296,20 @@ containerSecurityContext:
   enabled: true
   runAsUser: 1001
   runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
 ## Keycloak resource requests and limits
 ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
 ## @param resources.limits The resources limits for the Keycloak containers
 ## @param resources.requests The requested resources for the Keycloak containers
 ##
 resources:
-  limits: {}
-  requests: {}
+  limits:
+    memory: 256Mi
+    cpu: 250m
+  requests:
+    memory: 256Mi
+    cpu: 250m
 ## Configure extra options for Keycloak containers' liveness, readiness and startup probes
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
 ## @param livenessProbe.enabled Enable livenessProbe on Keycloak containers
@@ -545,7 +554,7 @@ service:
 ingress:
   ## @param ingress.enabled Enable ingress record generation for Keycloak
   ##
-  enabled: false
+  enabled: true   # 6.9.2023
   ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
@@ -653,14 +662,14 @@ ingress:
 networkPolicy:
   ## @param networkPolicy.enabled Enable the default NetworkPolicy policy
   ##
-  enabled: false
+  enabled: true  # 6.9.2023
   ## @param networkPolicy.allowExternal Don't require client label for connections
   ## The Policy model to apply. When set to false, only pods with the correct
   ## client label will have network access to the ports Keycloak is listening
   ## on. When true, Keycloak will accept connections from any source
   ## (with the correct destination port).
   ##
-  allowExternal: true
+  allowExternal: false   # 15.9.2023
   ## @param networkPolicy.additionalRules Additional NetworkPolicy rules
   ## Note that all rules are OR-ed.
   ## Example:
@@ -899,8 +908,12 @@ keycloakConfigCli:
   ## @param keycloakConfigCli.resources.requests The requested resources for the keycloak-config-cli container
   ##
   resources:
-    limits: {}
-    requests: {}
+    limits:
+      memory: 256Mi
+      cpu: 250m
+    requests:
+      memory: 256Mi
+      cpu: 250m
   ## keycloak-config-cli containers' Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
   ## @param keycloakConfigCli.containerSecurityContext.enabled Enabled keycloak-config-cli containers' Security Context
@@ -911,6 +924,7 @@ keycloakConfigCli:
     enabled: true
     runAsUser: 1001
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
   ## keycloak-config-cli pods' Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   ## @param keycloakConfigCli.podSecurityContext.enabled Enabled keycloak-config-cli pods' Security Context
@@ -919,6 +933,8 @@ keycloakConfigCli:
   podSecurityContext:
     enabled: true
     fsGroup: 1001
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
   ## @param keycloakConfigCli.backoffLimit Number of retries before considering a Job as failed
   ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
   ##

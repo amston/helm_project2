@@ -444,10 +444,13 @@ primary:
   ## @param primary.resources.requests.cpu The requested cpu for the PostgreSQL Primary containers
   ##
   resources:
-    limits: {}
+    limits:
+      memory: 7Gi
+      cpu: 300m
     requests:
-      memory: 256Mi
-      cpu: 250m
+      memory: 7Gi
+      cpu: 300m
+
   ## Pod Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ## @param primary.podSecurityContext.enabled Enable security context
@@ -456,6 +459,8 @@ primary:
   podSecurityContext:
     enabled: true
     fsGroup: 1001
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
   ## Container Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ## @param primary.containerSecurityContext.enabled Enable container security context
@@ -472,6 +477,7 @@ primary:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -807,9 +813,11 @@ readReplicas:
   ## @param readReplicas.resources.requests.cpu The requested cpu for the PostgreSQL read only containers
   ##
   resources:
-    limits: {}
+    limits:
+      memory: 7Gi
+      cpu: 250m
     requests:
-      memory: 256Mi
+      memory: 7Gi
       cpu: 250m
   ## Pod Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -835,6 +843,7 @@ readReplicas:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -1178,13 +1187,13 @@ backup:
 networkPolicy:
   ## @param networkPolicy.enabled Enable network policies
   ##
-  enabled: false
+  enabled: true   # 15.9.2023
   ## @param networkPolicy.metrics.enabled Enable network policies for metrics (prometheus)
   ## @param networkPolicy.metrics.namespaceSelector [object] Monitoring namespace selector labels. These labels will be used to identify the prometheus' namespace.
   ## @param networkPolicy.metrics.podSelector [object] Monitoring pod selector labels. These labels will be used to identify the Prometheus pods.
   ##
   metrics:
-    enabled: false
+    enabled: false  # 11.9.2023
     ## e.g:
     ## namespaceSelector:
     ##   label: monitoring
@@ -1204,17 +1213,23 @@ networkPolicy:
     ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.customRules Custom network policy for the PostgreSQL primary node.
     ##
     primaryAccessOnlyFrom:
-      enabled: false
+      enabled: true  # 6.9.2023
       ## e.g:
       ## namespaceSelector:
       ##   label: ingress
       ##
-      namespaceSelector: {}
+      namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+        ##  namespace: default
       ## e.g:
       ## podSelector:
       ##   label: access
       ##
-      podSelector: {}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: keycloak
+      ##  pod-name: my-keycloak-0
       ## custom ingress rules
       ## e.g:
       ## customRules:
@@ -1230,7 +1245,7 @@ networkPolicy:
     ## @param networkPolicy.ingressRules.readReplicasAccessOnlyFrom.customRules Custom network policy for the PostgreSQL read-only nodes.
     ##
     readReplicasAccessOnlyFrom:
-      enabled: false
+      enabled: true
       ## e.g:
       ## namespaceSelector:
       ##   label: ingress
@@ -1255,15 +1270,16 @@ networkPolicy:
   ##
   egressRules:
     # Deny connections to external. This is not compatible with an external database.
-    denyConnectionsToExternal: false
+    denyConnectionsToExternal: false    # 15.9.2023
     ## Additional custom egress rules
     ## e.g:
-    ## customRules:
-    ##   - to:
-    ##       - namespaceSelector:
-    ##           matchLabels:
-    ##             label: example
-    ##
+    customRules:
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: default
+##            label: example
+    
     customRules: []
 
 ## @section Volume Permissions parameters
@@ -1436,6 +1452,7 @@ metrics:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:

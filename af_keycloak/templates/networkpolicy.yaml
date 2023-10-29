@@ -28,9 +28,9 @@ spec:
         {{- end }}
       {{- if not .Values.networkPolicy.allowExternal }}
       from:
-      ##  - podSelector:  24.9.2023
-      ##      matchLabels:
-      ##        {{ template "common.names.fullname" . }}-client: "true"
+        - podSelector:
+            matchLabels:
+              {{ template "common.names.fullname" . }}-client: "true"
         - podSelector:
             matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 14 }}
               app.kubernetes.io/component: keycloak

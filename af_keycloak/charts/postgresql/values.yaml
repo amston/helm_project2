@@ -444,13 +444,10 @@ primary:
   ## @param primary.resources.requests.cpu The requested cpu for the PostgreSQL Primary containers
   ##
   resources:
-    limits:
-      memory: 7Gi
-      cpu: 300m
+    limits: {}
     requests:
-      memory: 7Gi
-      cpu: 300m
-
+      memory: 256Mi
+      cpu: 250m
   ## Pod Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ## @param primary.podSecurityContext.enabled Enable security context
@@ -459,8 +456,6 @@ primary:
   podSecurityContext:
     enabled: true
     fsGroup: 1001
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
   ## Container Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ## @param primary.containerSecurityContext.enabled Enable container security context
@@ -477,7 +472,6 @@ primary:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -813,11 +807,9 @@ readReplicas:
   ## @param readReplicas.resources.requests.cpu The requested cpu for the PostgreSQL read only containers
   ##
   resources:
-    limits:
-      memory: 7Gi
-      cpu: 250m
+    limits: {}
     requests:
-      memory: 7Gi
+      memory: 256Mi
       cpu: 250m
   ## Pod Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -843,7 +835,6 @@ readReplicas:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -1187,13 +1178,13 @@ backup:
 networkPolicy:
   ## @param networkPolicy.enabled Enable network policies
   ##
-  enabled: true   # 15.9.2023
+  enabled: false
   ## @param networkPolicy.metrics.enabled Enable network policies for metrics (prometheus)
   ## @param networkPolicy.metrics.namespaceSelector [object] Monitoring namespace selector labels. These labels will be used to identify the prometheus' namespace.
   ## @param networkPolicy.metrics.podSelector [object] Monitoring pod selector labels. These labels will be used to identify the Prometheus pods.
   ##
   metrics:
-    enabled: false  # 11.9.2023
+    enabled: false
     ## e.g:
     ## namespaceSelector:
     ##   label: monitoring
@@ -1213,24 +1204,17 @@ networkPolicy:
     ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.customRules Custom network policy for the PostgreSQL primary node.
     ##
     primaryAccessOnlyFrom:
-      enabled: 'true'  # 6.9.2023
+      enabled: false
       ## e.g:
-      ## namespaceSelector: {}
-      #  matchLabels:
-      #    kubernetes.io/metadata.name: default
+      ## namespaceSelector:
+      ##   label: ingress
       ##
-      namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: default
-      ##      namespace: default
+      namespaceSelector: {}
       ## e.g:
       ## podSelector:
       ##   label: access
       ##
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: keycloak
-      ##  pod-name: my-keycloak-0
+      podSelector: {}
       ## custom ingress rules
       ## e.g:
       ## customRules:
@@ -1246,7 +1230,7 @@ networkPolicy:
     ## @param networkPolicy.ingressRules.readReplicasAccessOnlyFrom.customRules Custom network policy for the PostgreSQL read-only nodes.
     ##
     readReplicasAccessOnlyFrom:
-      enabled: true
+      enabled: false
       ## e.g:
       ## namespaceSelector:
       ##   label: ingress
@@ -1271,16 +1255,15 @@ networkPolicy:
   ##
   egressRules:
     # Deny connections to external. This is not compatible with an external database.
-    denyConnectionsToExternal: false    # 15.9.2023
+    denyConnectionsToExternal: false
     ## Additional custom egress rules
     ## e.g:
-    customRules:
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            kubernetes.io/metadata.name: default
-##            label: example
-    
+    ## customRules:
+    ##   - to:
+    ##       - namespaceSelector:
+    ##           matchLabels:
+    ##             label: example
+    ##
     customRules: []
 
 ## @section Volume Permissions parameters
@@ -1359,7 +1342,7 @@ serviceAccount:
   ## @param serviceAccount.automountServiceAccountToken Allows auto mount of ServiceAccountToken on the serviceAccount created
   ## Can be set to false if pods using this serviceAccount do not need to use K8s API
   ##
-  automountServiceAccountToken: false   # 24.9.2023
+  automountServiceAccountToken: true
   ## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
   ##
   annotations: {}
@@ -1453,7 +1436,6 @@ metrics:
     runAsGroup: 0
     runAsNonRoot: true
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
